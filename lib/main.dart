@@ -46,7 +46,7 @@ class FileManagerApp extends StatelessWidget {
             shape: MaterialStateProperty.all(const StadiumBorder()),
             backgroundColor: MaterialStateProperty.resolveWith((states) {
               if (states.contains(MaterialState.hovered)) {
-                return Colors.deepOrange.shade600;
+                return Colors.blue.shade800;
               }
             }),
             foregroundColor: MaterialStateProperty.all(Colors.white),
