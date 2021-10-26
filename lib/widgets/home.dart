@@ -7,6 +7,7 @@ import 'package:file_manager/widgets/file.dart';
 import 'package:file_manager/widgets/folder.dart';
 import 'package:file_manager/widgets/icon_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:streams/streams.dart';
 import 'package:file_manager/extensions.dart';
 import 'package:path/path.dart' as path;
@@ -42,6 +43,8 @@ class _HomeState extends State<Home> {
   }
 
   var showHidden = false;
+
+  var selectedFse = <String, FileSystemEntity>{};
 
   @override
   void initState() {
@@ -171,6 +174,18 @@ class _HomeState extends State<Home> {
     setState(() {});
   }
 
+  void onFSETap(FileSystemEntity fse) {
+    if (RawKeyboard.instance.keysPressed.contains(LogicalKeyboardKey.controlLeft)) {
+      selectedFse[fse.path] = fse;
+      setState(() {});
+
+      return;
+    }
+
+    selectedFse = {};
+    setState(() {});
+  }
+
   @override
   void dispose() {
     folderWatcherSubscription?.cancel();
@@ -269,13 +284,17 @@ class _HomeState extends State<Home> {
                       if (entity is Directory) {
                         return FolderWidget(
                           dir: entity,
-                          onTap: onDirClicked,
+                          onTap: onFSETap,
+                          onDoubleTap: onDirClicked,
+                          isSelected: selectedFse[entity.path] != null,
                         );
                       }
 
                       if (entity is File) {
                         return FileWidget(
                           file: entity,
+                          onTap: onFSETap,
+                          isSelected: selectedFse[entity.path] != null,
                         );
                       }
 
