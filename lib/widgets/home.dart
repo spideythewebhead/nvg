@@ -6,6 +6,7 @@ import 'package:file_manager/widgets/current_path_title.dart';
 import 'package:file_manager/widgets/file.dart';
 import 'package:file_manager/widgets/folder.dart';
 import 'package:file_manager/widgets/icon_button.dart';
+import 'package:file_manager/widgets/side_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:streams/streams.dart';
@@ -175,7 +176,7 @@ class _HomeState extends State<Home> {
   }
 
   void onFSETap(FileSystemEntity fse) {
-    if (RawKeyboard.instance.keysPressed.contains(LogicalKeyboardKey.controlLeft)) {
+    if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.controlLeft)) {
       selectedFse[fse.path] = fse;
       setState(() {});
 
@@ -199,140 +200,176 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: Column(
         children: [
-          Material(
-            type: MaterialType.card,
-            color: theme.dialogBackgroundColor,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FMIconButton(
-                  child: const Icon(Icons.arrow_back),
-                  onTap: historyIndex == 0 ? null : historyBack,
-                ),
-                FMIconButton(
-                  child: const Icon(Icons.arrow_forward),
-                  onTap: (1 + historyIndex == historyStack.length) ? null : historyForward,
-                ),
-                Flexible(
-                  child: Center(
-                    child: SizedBox(
-                      height: 32.0,
-                      child: CurrentPathTitle(
-                        dir: currentDirectory,
-                        onTap: onDirClicked,
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Material(
+              type: MaterialType.card,
+              color: theme.dialogBackgroundColor,
+              borderRadius: BorderRadius.circular(8.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FMIconButton(
+                    child: const Icon(Icons.arrow_back),
+                    onTap: historyIndex == 0 ? null : historyBack,
+                  ),
+                  FMIconButton(
+                    child: const Icon(Icons.arrow_forward),
+                    onTap: (1 + historyIndex == historyStack.length) ? null : historyForward,
+                  ),
+                  Flexible(
+                    child: Center(
+                      child: SizedBox(
+                        height: 32.0,
+                        child: CurrentPathTitle(
+                          dir: currentDirectory,
+                          onTap: onDirClicked,
+                        ),
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 250.0,
+                    minHeight: double.infinity,
+                  ),
+                  child: SideNav(
+                    onDirTap: onDirClicked,
+                    selectedDir: currentDirectory,
+                  ),
+                ),
+                Expanded(
+                  child: LayoutBuilder(builder: (context, constraints) {
+                    return StreamBuilder<List<FileSystemEntity>>(
+                        stream: dirListStream[currentDirectory.path],
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const LinearProgressIndicator();
+                          }
+
+                          var entities = snapshot.data!;
+
+                          if (entities.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'Empty folder',
+                                style: theme.textTheme.headline4,
+                              ),
+                            );
+                          }
+
+                          if (!showHidden) {
+                            entities = entities.where((entity) {
+                              if (entity.name[0] == '.') {
+                                return false;
+                              }
+
+                              return true;
+                            }).toList(growable: false);
+                          }
+
+                          final width = constraints.maxWidth;
+
+                          late int columnItems;
+
+                          if (width >= 1600) {
+                            columnItems = 20;
+                          } else if (width >= 1280) {
+                            columnItems = 14;
+                          } else if (width >= 800) {
+                            columnItems = 12;
+                          } else if (width >= 600) {
+                            columnItems = 8;
+                          } else if (width >= 400) {
+                            columnItems = 4;
+                          } else if (width >= 200) {
+                            columnItems = 2;
+                          } else {
+                            columnItems = 1;
+                          }
+
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(8.0),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: columnItems,
+                              mainAxisSpacing: 8.0,
+                              crossAxisSpacing: 8.0,
+                            ),
+                            itemCount: entities.length,
+                            itemBuilder: (context, index) {
+                              final entity = entities[index];
+
+                              if (entity is Directory) {
+                                return FolderWidget(
+                                  dir: entity,
+                                  onTap: onFSETap,
+                                  onDoubleTap: onDirClicked,
+                                  isSelected: selectedFse[entity.path] != null,
+                                );
+                              }
+
+                              if (entity is File) {
+                                return FileWidget(
+                                  file: entity,
+                                  onTap: onFSETap,
+                                  isSelected: selectedFse[entity.path] != null,
+                                );
+                              }
+
+                              return Transform.rotate(
+                                angle: .456,
+                                child: Center(
+                                  child: Text(
+                                    'implement',
+                                    style: theme.textTheme.caption,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        });
+                  }),
                 ),
               ],
             ),
           ),
-          Expanded(
-            child: StreamBuilder<List<FileSystemEntity>>(
-                stream: dirListStream[currentDirectory.path],
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return const LinearProgressIndicator();
-                  }
-
-                  var entities = snapshot.data!;
-
-                  if (entities.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'Empty folder',
-                        style: theme.textTheme.headline4,
-                      ),
-                    );
-                  }
-
-                  if (!showHidden) {
-                    entities = entities.where((entity) {
-                      if (entity.name[0] == '.') {
-                        return false;
-                      }
-
-                      return true;
-                    }).toList(growable: false);
-                  }
-
-                  final screenWidth = MediaQuery.of(context).size.width;
-
-                  int columnItems = 6;
-
-                  if (screenWidth >= 1600) {
-                    columnItems = 20;
-                  } else if (screenWidth >= 1280) {
-                    columnItems = 12;
-                  } else if (screenWidth >= 896) {
-                    columnItems = 10;
-                  } else if (screenWidth >= 600) {
-                    columnItems = 8;
-                  }
-
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(8.0),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columnItems,
-                      mainAxisSpacing: 8.0,
-                      crossAxisSpacing: 8.0,
-                    ),
-                    itemCount: entities.length,
-                    itemBuilder: (context, index) {
-                      final entity = entities[index];
-
-                      if (entity is Directory) {
-                        return FolderWidget(
-                          dir: entity,
-                          onTap: onFSETap,
-                          onDoubleTap: onDirClicked,
-                          isSelected: selectedFse[entity.path] != null,
-                        );
-                      }
-
-                      if (entity is File) {
-                        return FileWidget(
-                          file: entity,
-                          onTap: onFSETap,
-                          isSelected: selectedFse[entity.path] != null,
-                        );
-                      }
-
-                      return Transform.rotate(
-                        angle: .456,
-                        child: Center(
-                          child: Text(
-                            'implement',
-                            style: theme.textTheme.caption,
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                }),
-          ),
-          Container(
-            color: theme.colorScheme.primary,
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Material(
+              type: MaterialType.card,
+              color: theme.dialogBackgroundColor,
+              borderRadius: BorderRadius.circular(8.0),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Checkbox(
-                      value: showHidden,
-                      onChanged: (value) {
-                        setState(() {
-                          showHidden = value!;
-                        });
-                      },
+                    const SizedBox(),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Checkbox(
+                          value: showHidden,
+                          onChanged: (value) {
+                            setState(() {
+                              showHidden = value!;
+                            });
+                          },
+                        ),
+                        const Text('Show Hidden?'),
+                      ],
                     ),
-                    const Text('Show Hidden?'),
                   ],
                 ),
-              ],
+              ),
             ),
           )
         ],

@@ -15,13 +15,13 @@ class FileManagerApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
         colorScheme: ColorScheme.dark(
-          primary: Colors.black26,
-          secondary: Colors.blue,
-          primaryVariant: Colors.black38,
-          secondaryVariant: Colors.deepOrange.shade600,
+          primary: Colors.green,
+          secondary: Colors.blue.shade600,
+          primaryVariant: Colors.green.shade700,
+          secondaryVariant: Colors.blue.shade800,
         ),
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.all(Colors.blue),
+          fillColor: MaterialStateProperty.all(Colors.blue.shade600),
         ),
         textTheme: const TextTheme(
           bodyText1: TextStyle(
@@ -58,6 +58,10 @@ class FileManagerApp extends StatelessWidget {
             minimumSize: const Size(88.0, 44.0),
             shape: const StadiumBorder(),
           ),
+        ),
+        iconTheme: const IconThemeData(
+          color: Colors.white,
+          size: 20.0,
         ),
       ),
       home: const Home(),

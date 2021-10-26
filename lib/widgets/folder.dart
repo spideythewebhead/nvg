@@ -26,13 +26,11 @@ class FolderWidget extends StatelessWidget {
       waitDuration: const Duration(seconds: 1),
       child: Material(
         type: MaterialType.canvas,
-        color: isSelected ? Colors.purple : Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
-        ),
+        color: isSelected ? theme.colorScheme.secondary : Colors.transparent,
+        shape: const CircleBorder(),
         child: InkWell(
           customBorder: const CircleBorder(),
-          hoverColor: theme.colorScheme.secondaryVariant,
+          hoverColor: theme.colorScheme.primaryVariant,
           onTap: () => onTap(dir),
           onDoubleTap: () => onDoubleTap(dir),
           child: Column(
