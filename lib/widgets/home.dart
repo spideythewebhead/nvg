@@ -202,7 +202,10 @@ class _HomeState extends State<Home> {
                   child: Center(
                     child: SizedBox(
                       height: 32.0,
-                      child: CurrentPathTitle(dir: currentDirectory),
+                      child: CurrentPathTitle(
+                        dir: currentDirectory,
+                        onTap: onDirClicked,
+                      ),
                     ),
                   ),
                 ),
