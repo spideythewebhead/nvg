@@ -9,6 +9,8 @@ import 'package:file_manager/widgets/icon_button.dart';
 import 'package:flutter/material.dart';
 import 'package:streams/streams.dart';
 import 'package:file_manager/extensions.dart';
+import 'package:path/path.dart' as path;
+import 'package:collection/collection.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
@@ -26,7 +28,18 @@ class _HomeState extends State<Home> {
 
   final dirListStream = <String, ReplaySubject<List<FileSystemEntity>>>{};
 
-  late Directory currentDirectory = historyStack[0] as Directory;
+  StreamSubscription? folderWatcherSubscription;
+
+  late Directory _currentDirectory;
+  Directory get currentDirectory => _currentDirectory;
+
+  set currentDirectory(Directory dir) {
+    folderWatcherSubscription?.cancel();
+    folderWatcherSubscription = dir.watch().listen(onDirWatcherCalled);
+
+    _currentDirectory = dir;
+    setState(() {});
+  }
 
   var showHidden = false;
 
@@ -34,7 +47,8 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
 
-    dirListStream[currentDirectory.path] = dirList(currentDirectory);
+    currentDirectory = historyStack.first as Directory;
+    dirListStream[_currentDirectory.path] = dirList(_currentDirectory);
   }
 
   ReplaySubject<List<FileSystemEntity>> dirList(Directory dir) {
@@ -47,11 +61,76 @@ class _HomeState extends State<Home> {
     subscription = dir.list().listen((entity) {
       subFiles.add(entity);
     }, onDone: () {
-      replay.add(subFiles);
+      replay.add(subFiles..sortBy((entity) => entity.name));
       subscription.cancel();
     });
 
     return replay;
+  }
+
+  void onDirWatcherCalled(FileSystemEvent event) async {
+    if (event is FileSystemCreateEvent || event is FileSystemDeleteEvent) {
+      if (path.basename(event.path)[0] == '.' && !showHidden) {
+        return;
+      }
+    }
+
+    final streamController = dirListStream[currentDirectory.path]!;
+
+    if (event is FileSystemCreateEvent) {
+      final entities = streamController.currentItems[0];
+
+      streamController.add(
+        sortEntities([
+          ...entities,
+          event.isDirectory ? Directory(event.path) : File(event.path),
+        ]),
+      );
+    } else if (event is FileSystemDeleteEvent) {
+      final entities = streamController.currentItems[0];
+
+      final index = entities.indexWhere((entity) => entity.path == event.path);
+
+      if (index != -1) {
+        streamController.add(
+          <FileSystemEntity>[
+            ...entities.sublist(0, index),
+            ...entities.sublist(1 + index),
+          ],
+        );
+      }
+    } else if (event is FileSystemModifyEvent) {
+      final entities = streamController.currentItems[0];
+
+      final index = entities.indexWhere((entity) => entity.path == event.path);
+
+      if (index != -1) {
+        entities[index] = event.isDirectory ? Directory(event.path) : File(event.path);
+        streamController.add(sortEntities(entities));
+      }
+    } else if (event is FileSystemMoveEvent) {
+      final entities = streamController.currentItems[0];
+
+      final index = entities.indexWhere((entity) => entity.path == event.path);
+
+      if (index != -1) {
+        if (event.destination == null) {
+          streamController.add(
+            sortEntities(<FileSystemEntity>[
+              ...entities.sublist(0, index),
+              ...entities.sublist(1 + index),
+            ]),
+          );
+        } else {
+          entities[index] = event.isDirectory ? Directory(event.destination!) : File(event.destination!);
+          streamController.add(sortEntities(entities));
+        }
+      }
+    }
+  }
+
+  List<FileSystemEntity> sortEntities(List<FileSystemEntity> entities) {
+    return entities..sortBy((ent) => ent.path);
   }
 
   void onDirClicked(Directory dir) {
@@ -90,6 +169,12 @@ class _HomeState extends State<Home> {
     currentDirectory = historyStack[historyIndex] as Directory;
 
     setState(() {});
+  }
+
+  @override
+  void dispose() {
+    folderWatcherSubscription?.cancel();
+    super.dispose();
   }
 
   @override
