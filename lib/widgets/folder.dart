@@ -1,6 +1,9 @@
 import 'dart:io';
 
 import 'package:file_manager/widgets/common_actions.dart';
+import 'package:file_manager/widgets/context_menu.dart';
+import 'package:file_manager/widgets/context_menu_root.dart';
+import 'package:file_manager/widgets/delete_confirm_dialog.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/extensions.dart';
@@ -41,64 +44,140 @@ class _FolderWidgetState extends State<FolderWidget> {
     super.dispose();
   }
 
+  void onRename(String name) async {
+    isRenaming = false;
+
+    try {
+      final indexOfLastSep = widget.dir.path.lastIndexOf(path.separator);
+
+      await widget.dir.rename(path.join(widget.dir.path.substring(0, indexOfLastSep), name));
+    } catch (_) {}
+  }
+
+  void onDelete() async {
+    final canDelete = await showDialog(
+          context: context,
+          builder: (_) {
+            return DeleteConfirmDialog(name: widget.dir.name);
+          },
+        ) ??
+        false;
+
+    if (canDelete) {
+      try {
+        await widget.dir.delete();
+      } catch (_) {}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return RenameTextFieldPopup(
-      show: isRenaming,
-      onRename: (String rename) async {
-        isRenaming = false;
-
-        try {
-          final indexOfLastSep = widget.dir.path.lastIndexOf(path.separator);
-
-          await widget.dir.rename(path.join(widget.dir.path.substring(0, indexOfLastSep), rename));
-        } catch (_) {}
-      },
-      onDismiss: () {
-        isRenaming = false;
-      },
-      child: CommonActions(
+    return ContextMenu(
+      builder: (_) => _ContextMenu(
+        onDelete: onDelete,
         onRename: () {
           isRenaming = true;
         },
-        onDelete: () async {
-          await widget.dir.delete();
+      ),
+      child: RenameTextFieldPopup(
+        show: isRenaming,
+        onRename: onRename,
+        onDismiss: () {
+          isRenaming = false;
         },
-        child: Focus(
-          focusNode: focusNode,
-          child: Tooltip(
-            message: widget.dir.name,
-            waitDuration: const Duration(seconds: 1),
-            child: Material(
-              type: MaterialType.canvas,
-              color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                hoverColor: theme.colorScheme.primaryVariant,
-                onTap: () {
-                  focusNode.requestFocus();
-                  widget.onTap(widget.dir);
-                },
-                onDoubleTap: () => widget.onDoubleTap(widget.dir),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.folder),
-                    const SizedBox(height: 4.0),
-                    Flexible(
-                      child: Text(
-                        widget.dir.name,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+        child: CommonActions(
+          onRename: () {
+            isRenaming = true;
+          },
+          onDelete: onDelete,
+          child: Focus(
+            focusNode: focusNode,
+            child: Tooltip(
+              message: widget.dir.name,
+              waitDuration: const Duration(seconds: 1),
+              child: Material(
+                type: MaterialType.canvas,
+                color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  hoverColor: theme.colorScheme.primaryVariant,
+                  onTap: () {
+                    focusNode.requestFocus();
+                    widget.onTap(widget.dir);
+                  },
+                  onDoubleTap: () => widget.onDoubleTap(widget.dir),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.folder),
+                      const SizedBox(height: 4.0),
+                      Flexible(
+                        child: Text(
+                          widget.dir.name,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContextMenu extends StatelessWidget {
+  final VoidCallback onDelete;
+  final VoidCallback onRename;
+
+  const _ContextMenu({
+    Key? key,
+    required this.onDelete,
+    required this.onRename,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Center(
+      child: IntrinsicWidth(
+        child: Material(
+          color: theme.dialogBackgroundColor,
+          borderRadius: BorderRadius.circular(6.0),
+          elevation: 2.0,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minWidth: 200.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton(
+                    child: Text('Rename (F2)'),
+                    onPressed: onRename,
+                  ),
+                  TextButton(
+                    child: Text('Delete (Delete)'),
+                    onPressed: onDelete,
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text('Open in terminal'),
+                  ),
+                ],
               ),
             ),
           ),

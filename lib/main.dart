@@ -1,3 +1,4 @@
+import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/home.dart';
 import 'package:flutter/material.dart';
 
@@ -64,7 +65,7 @@ class FileManagerApp extends StatelessWidget {
           size: 20.0,
         ),
       ),
-      home: const Home(),
+      home: const ContextMenuRoot(child: Home()),
     );
   }
 }

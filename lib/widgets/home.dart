@@ -2,9 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file_manager/env.dart';
+import 'package:file_manager/widgets/context_menu.dart';
+import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/current_path_title.dart';
 import 'package:file_manager/widgets/file.dart';
 import 'package:file_manager/widgets/folder.dart';
+import 'package:file_manager/widgets/folder_global_context_menu.dart';
 import 'package:file_manager/widgets/icon_button.dart';
 import 'package:file_manager/widgets/side_nav.dart';
 import 'package:flutter/material.dart';
@@ -281,96 +284,103 @@ class _HomeState extends State<Home> {
                         ),
                       ),
                       Expanded(
-                        child: LayoutBuilder(builder: (context, constraints) {
-                          return StreamBuilder<List<FileSystemEntity>>(
-                              stream: dirListStream[currentDirectory.path],
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const LinearProgressIndicator();
-                                }
+                        child: ContextMenu(
+                          builder: (_) {
+                            return FolderGlobalContextMenu(
+                              directory: currentDirectory,
+                            );
+                          },
+                          child: LayoutBuilder(builder: (context, constraints) {
+                            return StreamBuilder<List<FileSystemEntity>>(
+                                stream: dirListStream[currentDirectory.path],
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const LinearProgressIndicator();
+                                  }
 
-                                var entities = snapshot.data!;
+                                  var entities = snapshot.data!;
 
-                                if (entities.isEmpty) {
-                                  return Center(
-                                    child: Text(
-                                      'Empty folder',
-                                      style: theme.textTheme.headline4,
-                                    ),
-                                  );
-                                }
-
-                                if (!showHidden) {
-                                  entities = entities.where((entity) {
-                                    if (entity.name[0] == '.') {
-                                      return false;
-                                    }
-
-                                    return true;
-                                  }).toList(growable: false);
-                                }
-
-                                final width = constraints.maxWidth;
-
-                                late int columnItems;
-
-                                if (width >= 1600) {
-                                  columnItems = 16;
-                                } else if (width >= 1280) {
-                                  columnItems = 14;
-                                } else if (width >= 800) {
-                                  columnItems = 12;
-                                } else if (width >= 600) {
-                                  columnItems = 8;
-                                } else if (width >= 400) {
-                                  columnItems = 6;
-                                } else if (width >= 200) {
-                                  columnItems = 3;
-                                } else {
-                                  columnItems = 2;
-                                }
-
-                                return GridView.builder(
-                                  padding: const EdgeInsets.all(8.0),
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: columnItems,
-                                    mainAxisSpacing: 2.0,
-                                    crossAxisSpacing: 2.0,
-                                  ),
-                                  itemCount: entities.length,
-                                  itemBuilder: (context, index) {
-                                    final entity = entities[index];
-
-                                    if (entity is Directory) {
-                                      return FolderWidget(
-                                        dir: entity,
-                                        onTap: onFSETap,
-                                        onDoubleTap: onDirClicked,
-                                        isSelected: selectedFse[entity.path] != null,
-                                      );
-                                    }
-
-                                    if (entity is File) {
-                                      return FileWidget(
-                                        file: entity,
-                                        onTap: onFSETap,
-                                        isSelected: selectedFse[entity.path] != null,
-                                      );
-                                    }
-
-                                    return Transform.rotate(
-                                      angle: .456,
-                                      child: Center(
-                                        child: Text(
-                                          'implement',
-                                          style: theme.textTheme.caption,
-                                        ),
+                                  if (entities.isEmpty) {
+                                    return Center(
+                                      child: Text(
+                                        'Empty folder',
+                                        style: theme.textTheme.headline4,
                                       ),
                                     );
-                                  },
-                                );
-                              });
-                        }),
+                                  }
+
+                                  if (!showHidden) {
+                                    entities = entities.where((entity) {
+                                      if (entity.name[0] == '.') {
+                                        return false;
+                                      }
+
+                                      return true;
+                                    }).toList(growable: false);
+                                  }
+
+                                  final width = constraints.maxWidth;
+
+                                  late int columnItems;
+
+                                  if (width >= 1600) {
+                                    columnItems = 16;
+                                  } else if (width >= 1280) {
+                                    columnItems = 14;
+                                  } else if (width >= 800) {
+                                    columnItems = 12;
+                                  } else if (width >= 600) {
+                                    columnItems = 8;
+                                  } else if (width >= 400) {
+                                    columnItems = 6;
+                                  } else if (width >= 250) {
+                                    columnItems = 4;
+                                  } else {
+                                    columnItems = 2;
+                                  }
+
+                                  return GridView.builder(
+                                    padding: const EdgeInsets.all(8.0),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columnItems,
+                                      mainAxisSpacing: 2.0,
+                                      crossAxisSpacing: 2.0,
+                                    ),
+                                    itemCount: entities.length,
+                                    itemBuilder: (context, index) {
+                                      final entity = entities[index];
+
+                                      if (entity is Directory) {
+                                        return FolderWidget(
+                                          dir: entity,
+                                          onTap: onFSETap,
+                                          onDoubleTap: onDirClicked,
+                                          isSelected: selectedFse[entity.path] != null,
+                                        );
+                                      }
+
+                                      if (entity is File) {
+                                        return FileWidget(
+                                          file: entity,
+                                          onTap: onFSETap,
+                                          isSelected: selectedFse[entity.path] != null,
+                                        );
+                                      }
+
+                                      return Transform.rotate(
+                                        angle: .456,
+                                        child: Center(
+                                          child: Text(
+                                            'implement',
+                                            style: theme.textTheme.caption,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                });
+                          }),
+                        ),
                       ),
                     ],
                   ),
