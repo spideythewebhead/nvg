@@ -26,11 +26,23 @@ class _RenameEntityTextFieldState extends State<_RenameEntityTextField> {
   void initState() {
     super.initState();
 
+    HardwareKeyboard.instance.addHandler(handleOnEscapeKey);
+
     focusNode.requestFocus();
+  }
+
+  bool handleOnEscapeKey(KeyEvent event) {
+    if (event.logicalKey == LogicalKeyboardKey.escape) {
+      widget.onDismiss();
+      return true;
+    }
+
+    return false;
   }
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(handleOnEscapeKey);
     focusNode.dispose();
     textController.dispose();
     super.dispose();
@@ -60,7 +72,7 @@ class _RenameEntityTextFieldState extends State<_RenameEntityTextField> {
                     height: 12.0,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Theme.of(context).cardColor,
+                      color: Theme.of(context).colorScheme.primaryVariant,
                     ),
                   ),
                   Card(

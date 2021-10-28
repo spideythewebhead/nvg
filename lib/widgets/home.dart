@@ -281,7 +281,7 @@ class _HomeState extends State<Home> {
                           late int columnItems;
 
                           if (width >= 1600) {
-                            columnItems = 20;
+                            columnItems = 16;
                           } else if (width >= 1280) {
                             columnItems = 14;
                           } else if (width >= 800) {
@@ -289,19 +289,19 @@ class _HomeState extends State<Home> {
                           } else if (width >= 600) {
                             columnItems = 8;
                           } else if (width >= 400) {
-                            columnItems = 4;
+                            columnItems = 6;
                           } else if (width >= 200) {
-                            columnItems = 2;
+                            columnItems = 3;
                           } else {
-                            columnItems = 1;
+                            columnItems = 2;
                           }
 
                           return GridView.builder(
                             padding: const EdgeInsets.all(8.0),
                             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: columnItems,
-                              mainAxisSpacing: 8.0,
-                              crossAxisSpacing: 8.0,
+                              mainAxisSpacing: 2.0,
+                              crossAxisSpacing: 2.0,
                             ),
                             itemCount: entities.length,
                             itemBuilder: (context, index) {
