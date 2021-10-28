@@ -14,6 +14,14 @@ import 'package:file_manager/extensions.dart';
 import 'package:path/path.dart' as path;
 import 'package:collection/collection.dart';
 
+class _HistoryForwardIntent extends Intent {
+  const _HistoryForwardIntent();
+}
+
+class _HistoryBackwardIntent extends Intent {
+  const _HistoryBackwardIntent();
+}
+
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
 
@@ -46,6 +54,23 @@ class _HomeState extends State<Home> {
   var showHidden = false;
 
   var selectedFse = <String, FileSystemEntity>{};
+
+  late final shortcutActions = {
+    _HistoryBackwardIntent: CallbackAction<_HistoryBackwardIntent>(
+      onInvoke: (intent) {
+        if (historyIndex != 0) {
+          historyBack();
+        }
+      },
+    ),
+    _HistoryForwardIntent: CallbackAction<_HistoryForwardIntent>(
+      onInvoke: (intent) {
+        if (1 + historyIndex != historyStack.length) {
+          historyForward();
+        }
+      },
+    )
+  };
 
   @override
   void initState() {
@@ -198,181 +223,193 @@ class _HomeState extends State<Home> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Material(
-              type: MaterialType.card,
-              color: theme.dialogBackgroundColor,
-              borderRadius: BorderRadius.circular(8.0),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FMIconButton(
-                    child: const Icon(Icons.arrow_back),
-                    onTap: historyIndex == 0 ? null : historyBack,
-                  ),
-                  FMIconButton(
-                    child: const Icon(Icons.arrow_forward),
-                    onTap: (1 + historyIndex == historyStack.length) ? null : historyForward,
-                  ),
-                  Flexible(
-                    child: Center(
-                      child: SizedBox(
-                        height: 32.0,
-                        child: CurrentPathTitle(
-                          dir: currentDirectory,
-                          onTap: onDirClicked,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: Shortcuts(
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): _HistoryBackwardIntent(),
+          SingleActivator(LogicalKeyboardKey.arrowRight, alt: true): _HistoryForwardIntent(),
+        },
+        child: Actions(
+          actions: shortcutActions,
+          child: Focus(
+            autofocus: true,
+            child: Column(
               children: [
-                ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxWidth: 250.0,
-                    minHeight: double.infinity,
-                  ),
-                  child: SideNav(
-                    onDirTap: onDirClicked,
-                    selectedDir: currentDirectory,
+                Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Material(
+                    type: MaterialType.card,
+                    color: theme.dialogBackgroundColor,
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FMIconButton(
+                          child: const Icon(Icons.arrow_back),
+                          onTap: historyIndex == 0 ? null : historyBack,
+                        ),
+                        FMIconButton(
+                          child: const Icon(Icons.arrow_forward),
+                          onTap: (1 + historyIndex == historyStack.length) ? null : historyForward,
+                        ),
+                        Flexible(
+                          child: Center(
+                            child: SizedBox(
+                              height: 32.0,
+                              child: CurrentPathTitle(
+                                dir: currentDirectory,
+                                onTap: onDirClicked,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
-                  child: LayoutBuilder(builder: (context, constraints) {
-                    return StreamBuilder<List<FileSystemEntity>>(
-                        stream: dirListStream[currentDirectory.path],
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return const LinearProgressIndicator();
-                          }
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxWidth: 250.0,
+                          minHeight: double.infinity,
+                        ),
+                        child: SideNav(
+                          onDirTap: onDirClicked,
+                          selectedDir: currentDirectory,
+                        ),
+                      ),
+                      Expanded(
+                        child: LayoutBuilder(builder: (context, constraints) {
+                          return StreamBuilder<List<FileSystemEntity>>(
+                              stream: dirListStream[currentDirectory.path],
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const LinearProgressIndicator();
+                                }
 
-                          var entities = snapshot.data!;
+                                var entities = snapshot.data!;
 
-                          if (entities.isEmpty) {
-                            return Center(
-                              child: Text(
-                                'Empty folder',
-                                style: theme.textTheme.headline4,
-                              ),
-                            );
-                          }
+                                if (entities.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Empty folder',
+                                      style: theme.textTheme.headline4,
+                                    ),
+                                  );
+                                }
 
-                          if (!showHidden) {
-                            entities = entities.where((entity) {
-                              if (entity.name[0] == '.') {
-                                return false;
-                              }
+                                if (!showHidden) {
+                                  entities = entities.where((entity) {
+                                    if (entity.name[0] == '.') {
+                                      return false;
+                                    }
 
-                              return true;
-                            }).toList(growable: false);
-                          }
+                                    return true;
+                                  }).toList(growable: false);
+                                }
 
-                          final width = constraints.maxWidth;
+                                final width = constraints.maxWidth;
 
-                          late int columnItems;
+                                late int columnItems;
 
-                          if (width >= 1600) {
-                            columnItems = 16;
-                          } else if (width >= 1280) {
-                            columnItems = 14;
-                          } else if (width >= 800) {
-                            columnItems = 12;
-                          } else if (width >= 600) {
-                            columnItems = 8;
-                          } else if (width >= 400) {
-                            columnItems = 6;
-                          } else if (width >= 200) {
-                            columnItems = 3;
-                          } else {
-                            columnItems = 2;
-                          }
+                                if (width >= 1600) {
+                                  columnItems = 16;
+                                } else if (width >= 1280) {
+                                  columnItems = 14;
+                                } else if (width >= 800) {
+                                  columnItems = 12;
+                                } else if (width >= 600) {
+                                  columnItems = 8;
+                                } else if (width >= 400) {
+                                  columnItems = 6;
+                                } else if (width >= 200) {
+                                  columnItems = 3;
+                                } else {
+                                  columnItems = 2;
+                                }
 
-                          return GridView.builder(
-                            padding: const EdgeInsets.all(8.0),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: columnItems,
-                              mainAxisSpacing: 2.0,
-                              crossAxisSpacing: 2.0,
-                            ),
-                            itemCount: entities.length,
-                            itemBuilder: (context, index) {
-                              final entity = entities[index];
-
-                              if (entity is Directory) {
-                                return FolderWidget(
-                                  dir: entity,
-                                  onTap: onFSETap,
-                                  onDoubleTap: onDirClicked,
-                                  isSelected: selectedFse[entity.path] != null,
-                                );
-                              }
-
-                              if (entity is File) {
-                                return FileWidget(
-                                  file: entity,
-                                  onTap: onFSETap,
-                                  isSelected: selectedFse[entity.path] != null,
-                                );
-                              }
-
-                              return Transform.rotate(
-                                angle: .456,
-                                child: Center(
-                                  child: Text(
-                                    'implement',
-                                    style: theme.textTheme.caption,
+                                return GridView.builder(
+                                  padding: const EdgeInsets.all(8.0),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: columnItems,
+                                    mainAxisSpacing: 2.0,
+                                    crossAxisSpacing: 2.0,
                                   ),
-                                ),
-                              );
-                            },
-                          );
-                        });
-                  }),
+                                  itemCount: entities.length,
+                                  itemBuilder: (context, index) {
+                                    final entity = entities[index];
+
+                                    if (entity is Directory) {
+                                      return FolderWidget(
+                                        dir: entity,
+                                        onTap: onFSETap,
+                                        onDoubleTap: onDirClicked,
+                                        isSelected: selectedFse[entity.path] != null,
+                                      );
+                                    }
+
+                                    if (entity is File) {
+                                      return FileWidget(
+                                        file: entity,
+                                        onTap: onFSETap,
+                                        isSelected: selectedFse[entity.path] != null,
+                                      );
+                                    }
+
+                                    return Transform.rotate(
+                                      angle: .456,
+                                      child: Center(
+                                        child: Text(
+                                          'implement',
+                                          style: theme.textTheme.caption,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              });
+                        }),
+                      ),
+                    ],
+                  ),
                 ),
+                Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Material(
+                    type: MaterialType.card,
+                    color: theme.dialogBackgroundColor,
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const SizedBox(),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: showHidden,
+                                onChanged: (value) {
+                                  setState(() {
+                                    showHidden = value!;
+                                  });
+                                },
+                              ),
+                              const Text('Show Hidden?'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Material(
-              type: MaterialType.card,
-              color: theme.dialogBackgroundColor,
-              borderRadius: BorderRadius.circular(8.0),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Checkbox(
-                          value: showHidden,
-                          onChanged: (value) {
-                            setState(() {
-                              showHidden = value!;
-                            });
-                          },
-                        ),
-                        const Text('Show Hidden?'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-        ],
+        ),
       ),
     );
   }

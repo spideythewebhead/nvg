@@ -78,7 +78,7 @@ class SideNav extends StatelessWidget {
                 ListTile(
                   title: const Text('Trash'),
                   leading: const Icon(Icons.delete),
-                  onTap: () => onDirTap(_trash),
+                  // onTap: () => onDirTap(_trash),
                   selected: selectedDir.path == _trash.path,
                 ),
               ],
