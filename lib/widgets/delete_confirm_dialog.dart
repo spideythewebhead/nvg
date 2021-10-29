@@ -45,7 +45,7 @@ class DeleteConfirmDialog extends StatelessWidget {
                         ),
                         Expanded(
                           child: TextButton(
-                            onPressed: () => Navigator.pop(context, false),
+                            onPressed: () => Navigator.pop(context, true),
                             child: Text(
                               'DELETE "$name" !',
                               style: theme.textTheme.button?.copyWith(

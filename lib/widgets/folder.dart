@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
-import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/extensions.dart';
+import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 
 class FolderWidget extends StatefulWidget {
@@ -80,6 +80,9 @@ class _FolderWidgetState extends State<FolderWidget> {
         onRename: () {
           isRenaming = true;
         },
+        onCopyPath: () {
+          Clipboard.setData(ClipboardData(text: widget.dir.path));
+        },
       ),
       child: RenameTextFieldPopup(
         show: isRenaming,
@@ -138,11 +141,13 @@ class _FolderWidgetState extends State<FolderWidget> {
 class _ContextMenu extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onRename;
+  final VoidCallback onCopyPath;
 
   const _ContextMenu({
     Key? key,
     required this.onDelete,
     required this.onRename,
+    required this.onCopyPath,
   }) : super(key: key);
 
   @override
@@ -166,16 +171,20 @@ class _ContextMenu extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextButton(
-                    child: Text('Rename (F2)'),
+                    child: const Text('Rename (F2)'),
                     onPressed: onRename,
                   ),
                   TextButton(
-                    child: Text('Delete (Delete)'),
+                    child: const Text('Delete (Delete)'),
                     onPressed: onDelete,
                   ),
                   TextButton(
+                    onPressed: onCopyPath,
+                    child: const Text('Copy path'),
+                  ),
+                  TextButton(
                     onPressed: () {},
-                    child: Text('Open in terminal'),
+                    child: const Text('Open in terminal'),
                   ),
                 ],
               ),

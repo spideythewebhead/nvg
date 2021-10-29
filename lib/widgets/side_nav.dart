@@ -10,7 +10,7 @@ final _downloads = Directory(path.join(kHome, 'Downloads'));
 final _music = Directory(path.join(kHome, 'Music'));
 final _pictures = Directory(path.join(kHome, 'Pictures'));
 final _videos = Directory(path.join(kHome, 'Videos'));
-final _trash = Directory(path.join(kHome, 'Trash'));
+final _trash = Directory(path.join(kHome, '.local', 'share', 'Trash', 'files'));
 
 class SideNav extends StatelessWidget {
   final ValueChanged<Directory> onDirTap;
@@ -78,7 +78,7 @@ class SideNav extends StatelessWidget {
                 ListTile(
                   title: const Text('Trash'),
                   leading: const Icon(Icons.delete),
-                  // onTap: () => onDirTap(_trash),
+                  onTap: () => onDirTap(_trash),
                   selected: selectedDir.path == _trash.path,
                 ),
               ],

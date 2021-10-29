@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:file_manager/env.dart';
 import 'package:file_manager/widgets/context_menu.dart';
-import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/current_path_title.dart';
 import 'package:file_manager/widgets/file.dart';
 import 'package:file_manager/widgets/folder.dart';
