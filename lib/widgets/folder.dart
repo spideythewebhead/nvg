@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
@@ -83,6 +84,9 @@ class _FolderWidgetState extends State<FolderWidget> {
         onCopyPath: () {
           Clipboard.setData(ClipboardData(text: widget.dir.path));
         },
+        openInTerminal: () async {
+          await openInTerminal(widget.dir.path);
+        },
       ),
       child: RenameTextFieldPopup(
         show: isRenaming,
@@ -142,12 +146,14 @@ class _ContextMenu extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onRename;
   final VoidCallback onCopyPath;
+  final VoidCallback openInTerminal;
 
   const _ContextMenu({
     Key? key,
     required this.onDelete,
     required this.onRename,
     required this.onCopyPath,
+    required this.openInTerminal,
   }) : super(key: key);
 
   @override
@@ -183,8 +189,8 @@ class _ContextMenu extends StatelessWidget {
                     child: const Text('Copy path'),
                   ),
                   TextButton(
-                    onPressed: () {},
                     child: const Text('Open in terminal'),
+                    onPressed: openInTerminal,
                   ),
                 ],
               ),
