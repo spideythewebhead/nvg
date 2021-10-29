@@ -99,39 +99,37 @@ class _FolderWidgetState extends State<FolderWidget> {
             isRenaming = true;
           },
           onDelete: onDelete,
-          child: Focus(
-            focusNode: focusNode,
-            child: Tooltip(
-              message: widget.dir.name,
-              waitDuration: const Duration(seconds: 1),
-              child: Material(
-                type: MaterialType.canvas,
-                color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  hoverColor: theme.colorScheme.primaryVariant,
-                  onTap: () {
-                    focusNode.requestFocus();
-                    widget.onTap(widget.dir);
-                  },
-                  onDoubleTap: () => widget.onDoubleTap(widget.dir),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.folder),
-                      const SizedBox(height: 4.0),
-                      Flexible(
-                        child: Text(
-                          widget.dir.name,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+          child: Tooltip(
+            message: widget.dir.name,
+            waitDuration: const Duration(seconds: 1),
+            child: Material(
+              type: MaterialType.canvas,
+              color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                hoverColor: theme.colorScheme.primaryVariant,
+                focusNode: focusNode,
+                onTap: () {
+                  focusNode.requestFocus();
+                  widget.onTap(widget.dir);
+                },
+                onDoubleTap: () => widget.onDoubleTap(widget.dir),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.folder),
+                    const SizedBox(height: 4.0),
+                    Flexible(
+                      child: Text(
+                        widget.dir.name,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

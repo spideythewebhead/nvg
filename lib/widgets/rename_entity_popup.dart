@@ -1,3 +1,4 @@
+import 'package:file_manager/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -90,7 +91,7 @@ class _RenameEntityTextFieldState extends State<_RenameEntityTextField> {
                               ),
                               inputFormatters: [
                                 FilteringTextInputFormatter.allow(
-                                  RegExp(r'[\w\d \._-]+'),
+                                  allowedEntityRegExp,
                                 )
                               ],
                               focusNode: focusNode,

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+final allowedEntityRegExp = RegExp(r'[\w\d \._-]+');
+
 Future<bool> openInTerminal(String path) async {
   try {
     final completer = Completer<bool>();
@@ -44,9 +46,7 @@ Future<bool> openInTerminal(String path) async {
     proc.stdin.writeln('ls /usr/bin | grep -Ei "gnome-terminal|konsole"');
 
     return completer.future;
-  } catch (_) {
-    print(_);
-  }
+  } catch (_) {}
 
   return false;
 }
