@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:file_manager/env.dart';
+import 'package:file_manager/fse_view_type.dart';
 import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/current_path_title.dart';
@@ -9,6 +10,8 @@ import 'package:file_manager/widgets/dir_list_event.dart';
 import 'package:file_manager/widgets/file.dart';
 import 'package:file_manager/widgets/folder.dart';
 import 'package:file_manager/widgets/folder_global_context_menu.dart';
+import 'package:file_manager/widgets/fse_grid_view.dart';
+import 'package:file_manager/widgets/fse_list_view.dart';
 import 'package:file_manager/widgets/icon_button.dart';
 import 'package:file_manager/widgets/side_nav.dart';
 import 'package:file_manager/widgets/text_filtering.dart';
@@ -88,6 +91,8 @@ class _HomeState extends State<Home> {
       },
     )
   };
+
+  final fseViewType = ValueNotifier(FseViewType.grid);
 
   @override
   void initState() {
@@ -217,7 +222,7 @@ class _HomeState extends State<Home> {
     setState(() {});
   }
 
-  void onFSETap(FileSystemEntity fse) {
+  void onFSEClick(FileSystemEntity fse) {
     if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.controlLeft)) {
       selectedFse[fse.path] = fse;
       setState(() {});
@@ -245,11 +250,13 @@ class _HomeState extends State<Home> {
     return false;
   }
 
-  void onFileDoubleTap(File file) async {
+  void onFileDoubleClicked(File file) async {
     try {
       await Process.run('xdg-open', [file.path]);
     } catch (_) {}
   }
+
+  bool isFseSelected(String path) => selectedFse.containsKey(path);
 
   @override
   void dispose() {
@@ -306,6 +313,21 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                         FMIconButton(
+                          child: ValueListenableBuilder<FseViewType>(
+                            valueListenable: fseViewType,
+                            builder: (context, value, child) {
+                              if (value == FseViewType.grid) {
+                                return const Icon(Icons.grid_view);
+                              }
+
+                              return const Icon(Icons.view_list);
+                            },
+                          ),
+                          onTap: () {
+                            fseViewType.value = fseViewType.value.next;
+                          },
+                        ),
+                        FMIconButton(
                           child: const Icon(Icons.search),
                           onTap: searchFocusNode.requestFocus,
                         ),
@@ -342,118 +364,77 @@ class _HomeState extends State<Home> {
                                 directory: currentDirectory,
                               );
                             },
-                            child: LayoutBuilder(builder: (context, constraints) {
-                              return StreamBuilder<DirListEvent>(
-                                  stream: dirListController,
-                                  initialData: const DirListLoadingEvent(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.data is DirListLoadingEvent) {
-                                      return const LinearProgressIndicator();
+                            child: StreamBuilder<DirListEvent>(
+                              stream: dirListController,
+                              initialData: const DirListLoadingEvent(),
+                              builder: (context, snapshot) {
+                                if (snapshot.data is DirListLoadingEvent) {
+                                  return const LinearProgressIndicator();
+                                }
+
+                                final data = snapshot.data;
+                                late List<FileSystemEntity> entities;
+
+                                if (data is DirListLoadedEvent) {
+                                  entities = data.entities;
+                                } else if (data is DirListChangedEvent) {
+                                  entities = data.entities;
+                                }
+
+                                if (entities.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Empty folder',
+                                      style: theme.textTheme.headline4,
+                                    ),
+                                  );
+                                }
+
+                                if (!showHidden) {
+                                  entities = entities.where((entity) {
+                                    if (entity.name[0] == '.') {
+                                      return false;
                                     }
 
-                                    final data = snapshot.data;
-                                    late List<FileSystemEntity> entities;
+                                    return true;
+                                  }).toList(growable: false);
+                                }
 
-                                    if (data is DirListLoadedEvent) {
-                                      entities = data.entities;
-                                    } else if (data is DirListChangedEvent) {
-                                      entities = data.entities;
-                                    }
+                                if (searchTextController.text.isNotEmpty) {
+                                  final regexp = RegExp(
+                                    searchTextController.text.replaceAll('.', '\\.'),
+                                    caseSensitive: false,
+                                  );
 
-                                    if (entities.isEmpty) {
-                                      return Center(
-                                        child: Text(
-                                          'Empty folder',
-                                          style: theme.textTheme.headline4,
-                                        ),
+                                  entities = entities.where((entity) {
+                                    return regexp.hasMatch(entity.name);
+                                  }).toList(growable: false);
+                                }
+
+                                return ValueListenableBuilder(
+                                  valueListenable: fseViewType,
+                                  builder: (context, viewType, child) {
+                                    if (viewType == FseViewType.grid) {
+                                      return FseGridView(
+                                        entities: entities,
+                                        onDirDoubleClick: onDirClicked,
+                                        onFileDoubleClick: onFileDoubleClicked,
+                                        onClick: onFSEClick,
+                                        isSelected: isFseSelected,
                                       );
                                     }
 
-                                    if (!showHidden) {
-                                      entities = entities.where((entity) {
-                                        if (entity.name[0] == '.') {
-                                          return false;
-                                        }
-
-                                        return true;
-                                      }).toList(growable: false);
-                                    }
-
-                                    if (searchTextController.text.isNotEmpty) {
-                                      final regexp = RegExp(
-                                        searchTextController.text.replaceAll('.', '\\.'),
-                                        caseSensitive: false,
-                                      );
-
-                                      entities = entities.where((entity) {
-                                        return regexp.hasMatch(entity.name);
-                                      }).toList(growable: false);
-                                    }
-
-                                    final width = constraints.maxWidth;
-
-                                    late int columnItems;
-
-                                    if (width >= 1600) {
-                                      columnItems = 16;
-                                    } else if (width >= 1280) {
-                                      columnItems = 14;
-                                    } else if (width >= 800) {
-                                      columnItems = 12;
-                                    } else if (width >= 600) {
-                                      columnItems = 8;
-                                    } else if (width >= 400) {
-                                      columnItems = 6;
-                                    } else if (width >= 250) {
-                                      columnItems = 4;
-                                    } else {
-                                      columnItems = 2;
-                                    }
-
-                                    return GridView.builder(
-                                      padding: const EdgeInsets.all(8.0),
-                                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: columnItems,
-                                        mainAxisSpacing: 2.0,
-                                        crossAxisSpacing: 2.0,
-                                      ),
-                                      itemCount: entities.length,
-                                      itemBuilder: (context, index) {
-                                        final entity = entities[index];
-
-                                        if (entity is Directory) {
-                                          return FolderWidget(
-                                            key: Key(entity.path),
-                                            dir: entity,
-                                            onTap: onFSETap,
-                                            onDoubleTap: onDirClicked,
-                                            isSelected: selectedFse[entity.path] != null,
-                                          );
-                                        }
-
-                                        if (entity is File) {
-                                          return FileWidget(
-                                            key: Key(entity.path),
-                                            file: entity,
-                                            onDoubleTap: onFileDoubleTap,
-                                            onTap: onFSETap,
-                                            isSelected: selectedFse[entity.path] != null,
-                                          );
-                                        }
-
-                                        return Transform.rotate(
-                                          angle: .456,
-                                          child: Center(
-                                            child: Text(
-                                              'implement',
-                                              style: theme.textTheme.caption,
-                                            ),
-                                          ),
-                                        );
-                                      },
+                                    return FseListView(
+                                      entities: entities,
+                                      onDirDoubleClick: onDirClicked,
+                                      onFileDoubleClick: onFileDoubleClicked,
+                                      onClick: onFSEClick,
+                                      isSelected: isFseSelected,
                                     );
-                                  });
-                            }),
+                                  },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],

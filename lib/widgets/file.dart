@@ -4,31 +4,29 @@ import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
+import 'package:file_manager/widgets/file_last_modified_text.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/extensions.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 
-class FileWidget extends StatefulWidget {
+abstract class _BaseFileWidget extends StatefulWidget {
   final File file;
-  final ValueChanged<File> onTap;
+  final ValueChanged<File> onClick;
   final bool isSelected;
-  final ValueChanged<File> onDoubleTap;
+  final ValueChanged<File> onDoubleClick;
 
-  const FileWidget({
+  const _BaseFileWidget({
     Key? key,
     required this.file,
-    required this.onTap,
+    required this.onClick,
     required this.isSelected,
-    required this.onDoubleTap,
+    required this.onDoubleClick,
   }) : super(key: key);
-
-  @override
-  State<FileWidget> createState() => _FileWidgetState();
 }
 
-class _FileWidgetState extends State<FileWidget> {
+abstract class _BaseFileState<T extends _BaseFileWidget> extends State<T> {
   final focusNode = FocusNode();
 
   var _isRenaming = false;
@@ -70,7 +68,28 @@ class _FileWidgetState extends State<FileWidget> {
       await widget.file.rename(path.join(widget.file.path.substring(0, indexOfLastSep), rename));
     } catch (_) {}
   }
+}
 
+class FileGridWidget extends _BaseFileWidget {
+  const FileGridWidget({
+    Key? key,
+    required File file,
+    required ValueChanged<File> onClick,
+    required bool isSelected,
+    required ValueChanged<File> onDoubleClick,
+  }) : super(
+          key: key,
+          file: file,
+          onClick: onClick,
+          isSelected: isSelected,
+          onDoubleClick: onDoubleClick,
+        );
+
+  @override
+  State<FileGridWidget> createState() => _FileGridWidgetState();
+}
+
+class _FileGridWidgetState extends _BaseFileState<FileGridWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -112,9 +131,9 @@ class _FileWidgetState extends State<FileWidget> {
                 focusNode: focusNode,
                 onTap: () {
                   focusNode.requestFocus();
-                  widget.onTap(widget.file);
+                  widget.onClick(widget.file);
                 },
-                onDoubleTap: () => widget.onDoubleTap(widget.file),
+                onDoubleTap: () => widget.onDoubleClick(widget.file),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -188,6 +207,125 @@ class _ContextMenu extends StatelessWidget {
                   ),
                   TextButton(child: const Text('Open in terminal'), onPressed: openInTerminal),
                 ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FileListWidget extends _BaseFileWidget {
+  const FileListWidget({
+    Key? key,
+    required File file,
+    required ValueChanged<File> onClick,
+    required ValueChanged<File> onDoubleClick,
+    required bool isSelected,
+  }) : super(
+          key: key,
+          file: file,
+          onClick: onClick,
+          onDoubleClick: onDoubleClick,
+          isSelected: isSelected,
+        );
+
+  @override
+  _FileListWidgetState createState() => _FileListWidgetState();
+}
+
+class _FileListWidgetState extends _BaseFileState<FileListWidget> {
+  late Future<FileStat> fileStatFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    fileStatFuture = widget.file.stat();
+  }
+
+  @override
+  void didUpdateWidget(FileListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.file != widget.file) {
+      fileStatFuture = widget.file.stat();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ContextMenu(
+      builder: (_) {
+        return _ContextMenu(
+          onDelete: onDelete,
+          onRename: () => isRenaming = true,
+          onCopyPath: () {
+            Clipboard.setData(ClipboardData(text: widget.file.path));
+          },
+          openInTerminal: () async {
+            await openInTerminal(widget.file.parent.path);
+          },
+        );
+      },
+      child: RenameTextFieldPopup(
+        show: isRenaming,
+        onRename: onRename,
+        onDismiss: () {
+          isRenaming = false;
+        },
+        child: CommonActions(
+          onRename: () {
+            isRenaming = true;
+          },
+          onDelete: onDelete,
+          child: Tooltip(
+            message: widget.file.name,
+            waitDuration: const Duration(seconds: 1),
+            child: Material(
+              type: MaterialType.canvas,
+              color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
+              child: InkWell(
+                customBorder: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                hoverColor: theme.colorScheme.primaryVariant,
+                focusNode: focusNode,
+                onTap: () {
+                  focusNode.requestFocus();
+                  widget.onClick(widget.file);
+                },
+                onDoubleTap: () => widget.onDoubleClick(widget.file),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4.0,
+                    vertical: 6.0,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      const SizedBox(width: 14.0),
+                      Expanded(
+                        child: Text(
+                          widget.file.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      FutureBuilder<FileStat>(
+                        future: fileStatFuture,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox();
+
+                          return FileLastModified(datetime: snapshot.data!.modified);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),

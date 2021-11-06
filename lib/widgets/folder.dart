@@ -4,31 +4,29 @@ import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
+import 'package:file_manager/widgets/file_last_modified_text.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/extensions.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 
-class FolderWidget extends StatefulWidget {
+abstract class _BaseFolderWidget extends StatefulWidget {
   final Directory dir;
-  final ValueChanged<Directory> onTap;
-  final ValueChanged<Directory> onDoubleTap;
+  final ValueChanged<Directory> onClick;
+  final ValueChanged<Directory> onDoubleClick;
   final bool isSelected;
 
-  const FolderWidget({
+  const _BaseFolderWidget({
     Key? key,
     required this.dir,
-    required this.onTap,
-    required this.onDoubleTap,
+    required this.onClick,
+    required this.onDoubleClick,
     required this.isSelected,
   }) : super(key: key);
-
-  @override
-  State<FolderWidget> createState() => _FolderWidgetState();
 }
 
-class _FolderWidgetState extends State<FolderWidget> {
+abstract class _BaseFolderState<T extends _BaseFolderWidget> extends State<T> {
   final focusNode = FocusNode();
 
   var _isRenaming = false;
@@ -70,7 +68,28 @@ class _FolderWidgetState extends State<FolderWidget> {
       } catch (_) {}
     }
   }
+}
 
+class FolderGridWidget extends _BaseFolderWidget {
+  const FolderGridWidget({
+    Key? key,
+    required Directory dir,
+    required ValueChanged<Directory> onClick,
+    required ValueChanged<Directory> onDoubleClick,
+    required bool isSelected,
+  }) : super(
+          key: key,
+          dir: dir,
+          onClick: onClick,
+          onDoubleClick: onDoubleClick,
+          isSelected: isSelected,
+        );
+
+  @override
+  _FolderGridWidgetState createState() => _FolderGridWidgetState();
+}
+
+class _FolderGridWidgetState extends _BaseFolderState<FolderGridWidget> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -112,9 +131,9 @@ class _FolderWidgetState extends State<FolderWidget> {
                 focusNode: focusNode,
                 onTap: () {
                   focusNode.requestFocus();
-                  widget.onTap(widget.dir);
+                  widget.onClick(widget.dir);
                 },
-                onDoubleTap: () => widget.onDoubleTap(widget.dir),
+                onDoubleTap: () => widget.onDoubleClick(widget.dir),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -191,6 +210,124 @@ class _ContextMenu extends StatelessWidget {
                     onPressed: openInTerminal,
                   ),
                 ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FolderListWidget extends _BaseFolderWidget {
+  const FolderListWidget({
+    Key? key,
+    required Directory dir,
+    required ValueChanged<Directory> onClick,
+    required ValueChanged<Directory> onDoubleClick,
+    required bool isSelected,
+  }) : super(
+          key: key,
+          dir: dir,
+          onClick: onClick,
+          onDoubleClick: onDoubleClick,
+          isSelected: isSelected,
+        );
+
+  @override
+  _FolderListWidgetState createState() => _FolderListWidgetState();
+}
+
+class _FolderListWidgetState extends _BaseFolderState<FolderListWidget> {
+  late Future<FileStat> fileStatFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    fileStatFuture = widget.dir.stat();
+  }
+
+  @override
+  void didUpdateWidget(FolderListWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.dir != widget.dir) {
+      fileStatFuture = widget.dir.stat();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ContextMenu(
+      builder: (_) => _ContextMenu(
+        onDelete: onDelete,
+        onRename: () {
+          isRenaming = true;
+        },
+        onCopyPath: () {
+          Clipboard.setData(ClipboardData(text: widget.dir.path));
+        },
+        openInTerminal: () async {
+          await openInTerminal(widget.dir.path);
+        },
+      ),
+      child: RenameTextFieldPopup(
+        show: isRenaming,
+        onRename: onRename,
+        onDismiss: () {
+          isRenaming = false;
+        },
+        child: CommonActions(
+          onRename: () {
+            isRenaming = true;
+          },
+          onDelete: onDelete,
+          child: Tooltip(
+            message: widget.dir.name,
+            waitDuration: const Duration(seconds: 1),
+            child: Material(
+              type: MaterialType.canvas,
+              color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
+              child: InkWell(
+                customBorder: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4.0),
+                ),
+                hoverColor: theme.colorScheme.primaryVariant,
+                focusNode: focusNode,
+                onTap: () {
+                  focusNode.requestFocus();
+                  widget.onClick(widget.dir);
+                },
+                onDoubleTap: () => widget.onDoubleClick(widget.dir),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4.0,
+                    vertical: 6.0,
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.arrow_right, size: 14.0),
+                      Expanded(
+                        child: Text(
+                          widget.dir.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      FutureBuilder<FileStat>(
+                        future: fileStatFuture,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox();
+
+                          return FileLastModified(datetime: snapshot.data!.modified);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
