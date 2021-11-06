@@ -1,13 +1,23 @@
+import 'package:flutter/material.dart';
 import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/home.dart';
-import 'package:flutter/material.dart';
+import 'package:file_manager/extensions.dart';
 
-void main() {
-  runApp(const FileManagerApp());
+void main(List<String> args) {
+  runApp(
+    FileManagerApp(
+      args: args,
+    ),
+  );
 }
 
 class FileManagerApp extends StatelessWidget {
-  const FileManagerApp({Key? key}) : super(key: key);
+  final List<String> args;
+
+  const FileManagerApp({
+    Key? key,
+    required this.args,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +75,11 @@ class FileManagerApp extends StatelessWidget {
           size: 20.0,
         ),
       ),
-      home: const ContextMenuRoot(child: Home()),
+      home: ContextMenuRoot(
+        child: Home(
+          initialPath: args.firstOrNull,
+        ),
+      ),
     );
   }
 }

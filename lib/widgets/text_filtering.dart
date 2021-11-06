@@ -1,3 +1,4 @@
+import 'package:file_manager/widgets/icon_button.dart';
 import 'package:flutter/material.dart';
 
 class TextFiltering extends StatelessWidget {
@@ -26,11 +27,17 @@ class TextFiltering extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12.0),
         child: TextField(
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: InputBorder.none,
             filled: true,
-            prefixIcon: Icon(Icons.search),
-            suffixIcon: Icon(Icons.clear),
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: FMIconButton(
+              onTap: controller.clear,
+              child: Icon(
+                Icons.clear,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
           focusNode: focusNode,
           controller: controller,
