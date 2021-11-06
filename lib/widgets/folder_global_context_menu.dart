@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_manager/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
@@ -66,7 +67,9 @@ class FolderGlobalContextMenuState extends State<FolderGlobalContextMenu> {
               ),
               TextButton(
                 child: const Text('Open in terminal'),
-                onPressed: () {},
+                onPressed: () async {
+                  await openInTerminal(widget.directory.path);
+                },
               ),
             ],
           ),

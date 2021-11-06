@@ -5,6 +5,7 @@ import 'package:file_manager/env.dart';
 import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/current_path_title.dart';
+import 'package:file_manager/widgets/dir_list_event.dart';
 import 'package:file_manager/widgets/file.dart';
 import 'package:file_manager/widgets/folder.dart';
 import 'package:file_manager/widgets/folder_global_context_menu.dart';
@@ -43,13 +44,13 @@ class _HomeState extends State<Home> {
   final searchTextController = TextEditingController();
   final searchFocusNode = FocusNode();
 
+  final dirListController = ReplaySubject<DirListEvent>(size: 1);
+
   var historyStack = <FileSystemEntity>[
     Directory(kHome),
   ];
 
   var historyIndex = 0;
-
-  final dirListStream = <String, ReplaySubject<List<FileSystemEntity>>>{};
 
   StreamSubscription? folderWatcherSubscription;
 
@@ -57,6 +58,9 @@ class _HomeState extends State<Home> {
   Directory get currentDirectory => _currentDirectory;
 
   set currentDirectory(Directory dir) {
+    searchTextController.clear();
+    onDirChanged(dir);
+
     folderWatcherSubscription?.cancel();
     folderWatcherSubscription = dir.watch().listen(onDirWatcherCalled);
 
@@ -93,35 +97,20 @@ class _HomeState extends State<Home> {
       historyStack.add(Directory(widget.initialPath!));
     }
 
-    for (final dir in historyStack) {
-      addDirListStreamIfNotExistant(dir as Directory);
-    }
-
     historyIndex = historyStack.length - 1;
 
     currentDirectory = historyStack.last as Directory;
-    dirListStream[currentDirectory.path] = dirList(currentDirectory);
+    onDirChanged(currentDirectory);
 
     HardwareKeyboard.instance.addHandler(keyPressed);
 
     searchTextController.addListener(() => setState(() {}));
   }
 
-  ReplaySubject<List<FileSystemEntity>> dirList(Directory dir) {
-    final replay = ReplaySubject<List<FileSystemEntity>>(size: 1);
-
-    final subFiles = <FileSystemEntity>[];
-
-    late final StreamSubscription subscription;
-
-    subscription = dir.list().listen((entity) {
-      subFiles.add(entity);
-    }, onDone: () {
-      replay.add(subFiles..sortBy((entity) => entity.name));
-      subscription.cancel();
-    });
-
-    return replay;
+  void onDirChanged(Directory dir) {
+    dirListController.add(
+      DirListLoadedEvent(sortEntities(dir.listSync())),
+    );
   }
 
   void onDirWatcherCalled(FileSystemEvent event) async {
@@ -131,55 +120,62 @@ class _HomeState extends State<Home> {
       }
     }
 
-    final streamController = dirListStream[currentDirectory.path]!;
-
     if (event is FileSystemCreateEvent) {
-      final entities = streamController.currentItems[0];
+      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
 
-      streamController.add(
-        sortEntities([
-          ...entities,
-          event.isDirectory ? Directory(event.path) : File(event.path),
-        ]),
+      dirListController.add(
+        DirListChangedEvent(
+          sortEntities([
+            ...entities,
+            event.isDirectory ? Directory(event.path) : File(event.path),
+          ]),
+        ),
       );
     } else if (event is FileSystemDeleteEvent) {
-      final entities = streamController.currentItems[0];
+      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
 
       final index = entities.indexWhere((entity) => entity.path == event.path);
 
       if (index != -1) {
-        streamController.add(
+        dirListController.add(DirListChangedEvent(
           <FileSystemEntity>[
             ...entities.sublist(0, index),
             ...entities.sublist(1 + index),
           ],
-        );
+        ));
       }
     } else if (event is FileSystemModifyEvent) {
-      final entities = streamController.currentItems[0];
+      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
 
       final index = entities.indexWhere((entity) => entity.path == event.path);
 
       if (index != -1) {
         entities[index] = event.isDirectory ? Directory(event.path) : File(event.path);
-        streamController.add(sortEntities(entities));
+
+        dirListController.add(
+          DirListChangedEvent(sortEntities(entities)),
+        );
       }
     } else if (event is FileSystemMoveEvent) {
-      final entities = streamController.currentItems[0];
+      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
 
       final index = entities.indexWhere((entity) => entity.path == event.path);
 
       if (index != -1) {
         if (event.destination == null) {
-          streamController.add(
-            sortEntities(<FileSystemEntity>[
-              ...entities.sublist(0, index),
-              ...entities.sublist(1 + index),
-            ]),
+          dirListController.add(
+            DirListChangedEvent(
+              sortEntities(<FileSystemEntity>[
+                ...entities.sublist(0, index),
+                ...entities.sublist(1 + index),
+              ]),
+            ),
           );
         } else {
           entities[index] = event.isDirectory ? Directory(event.destination!) : File(event.destination!);
-          streamController.add(sortEntities(entities));
+          dirListController.add(
+            DirListChangedEvent(sortEntities(entities)),
+          );
         }
       }
     }
@@ -205,16 +201,6 @@ class _HomeState extends State<Home> {
     historyIndex = historyStack.length - 1;
 
     currentDirectory = dir;
-
-    addDirListStreamIfNotExistant(dir);
-
-    setState(() {});
-  }
-
-  void addDirListStreamIfNotExistant(Directory dir) {
-    if (!dirListStream.containsKey(dir.path)) {
-      dirListStream[dir.path] = dirList(dir);
-    }
   }
 
   void historyBack() {
@@ -262,7 +248,7 @@ class _HomeState extends State<Home> {
   void onFileDoubleTap(File file) async {
     try {
       await Process.run('xdg-open', [file.path]);
-    } catch (e) {}
+    } catch (_) {}
   }
 
   @override
@@ -357,14 +343,22 @@ class _HomeState extends State<Home> {
                               );
                             },
                             child: LayoutBuilder(builder: (context, constraints) {
-                              return StreamBuilder<List<FileSystemEntity>>(
-                                  stream: dirListStream[currentDirectory.path],
+                              return StreamBuilder<DirListEvent>(
+                                  stream: dirListController,
+                                  initialData: const DirListLoadingEvent(),
                                   builder: (context, snapshot) {
-                                    if (!snapshot.hasData) {
+                                    if (snapshot.data is DirListLoadingEvent) {
                                       return const LinearProgressIndicator();
                                     }
 
-                                    var entities = snapshot.data!;
+                                    final data = snapshot.data;
+                                    late List<FileSystemEntity> entities;
+
+                                    if (data is DirListLoadedEvent) {
+                                      entities = data.entities;
+                                    } else if (data is DirListChangedEvent) {
+                                      entities = data.entities;
+                                    }
 
                                     if (entities.isEmpty) {
                                       return Center(
