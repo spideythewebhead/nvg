@@ -14,12 +14,14 @@ class FileWidget extends StatefulWidget {
   final File file;
   final ValueChanged<File> onTap;
   final bool isSelected;
+  final ValueChanged<File> onDoubleTap;
 
   const FileWidget({
     Key? key,
     required this.file,
     required this.onTap,
     required this.isSelected,
+    required this.onDoubleTap,
   }) : super(key: key);
 
   @override
@@ -112,6 +114,7 @@ class _FileWidgetState extends State<FileWidget> {
                   focusNode.requestFocus();
                   widget.onTap(widget.file);
                 },
+                onDoubleTap: () => widget.onDoubleTap(widget.file),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,

@@ -259,6 +259,12 @@ class _HomeState extends State<Home> {
     return false;
   }
 
+  void onFileDoubleTap(File file) async {
+    try {
+      await Process.run('xdg-open', [file.path]);
+    } catch (e) {}
+  }
+
   @override
   void dispose() {
     bodyFocusNode.dispose();
@@ -435,6 +441,7 @@ class _HomeState extends State<Home> {
                                           return FileWidget(
                                             key: Key(entity.path),
                                             file: entity,
+                                            onDoubleTap: onFileDoubleTap,
                                             onTap: onFSETap,
                                             isSelected: selectedFse[entity.path] != null,
                                           );
