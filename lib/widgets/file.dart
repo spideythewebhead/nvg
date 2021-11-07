@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:file_manager/db_manager.dart';
 import 'package:file_manager/extensions.dart';
 import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
@@ -56,6 +58,7 @@ abstract class _BaseFileState<T extends _BaseFileWidget> extends State<T> {
     if (canDelete) {
       try {
         await widget.file.delete();
+        unawaited(DbManager.instance.favItemsBoxListenable.value.delete(widget.file.path));
       } catch (_) {}
     }
   }

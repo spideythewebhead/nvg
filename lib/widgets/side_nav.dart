@@ -12,14 +12,19 @@ final _pictures = Directory(path.join(kHome, 'Pictures'));
 final _videos = Directory(path.join(kHome, 'Videos'));
 final _trash = Directory(path.join(kHome, '.local', 'share', 'Trash', 'files'));
 
+/// this doesnt exist, only for compatibility
+final kFavouritesFolder = Directory(path.join(path.separator, 'Favourites'));
+
 class SideNav extends StatelessWidget {
   final ValueChanged<Directory> onDirTap;
   final Directory selectedDir;
+  final VoidCallback onFavClick;
 
   const SideNav({
     Key? key,
     required this.onDirTap,
     required this.selectedDir,
+    required this.onFavClick,
   }) : super(key: key);
 
   @override
@@ -80,6 +85,13 @@ class SideNav extends StatelessWidget {
                   leading: const Icon(Icons.delete),
                   onTap: () => onDirTap(_trash),
                   selected: selectedDir.path == _trash.path,
+                ),
+                const Divider(),
+                ListTile(
+                  title: const Text('Favourites'),
+                  leading: const Icon(Icons.star),
+                  onTap: onFavClick,
+                  selected: selectedDir.path == kFavouritesFolder.path,
                 ),
               ],
             ),

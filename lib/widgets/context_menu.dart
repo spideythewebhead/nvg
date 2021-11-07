@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class ContextMenu extends StatefulWidget {
   final Widget child;
-  final WidgetBuilder builder;
+  final WidgetBuilder? builder;
 
   const ContextMenu({
     Key? key,
@@ -17,8 +17,12 @@ class ContextMenu extends StatefulWidget {
 
 class _ContextMenuState extends State<ContextMenu> {
   void show(Offset position) {
+    if (widget.builder == null) {
+      return;
+    }
+
     ContextMenuRoot.of(context).show(
-      builder: widget.builder,
+      builder: widget.builder!,
       position: position,
     );
   }

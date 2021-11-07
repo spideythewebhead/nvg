@@ -1,9 +1,9 @@
+import 'package:collection/collection.dart';
 import 'package:file_manager/db_manager.dart';
 import 'package:file_manager/prefs_manager.dart';
-import 'package:flutter/material.dart';
 import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/home.dart';
-import 'package:file_manager/extensions.dart';
+import 'package:flutter/material.dart';
 
 void main(List<String> args) async {
   await Future.wait([

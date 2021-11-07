@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
+import 'package:file_manager/db_manager.dart';
 import 'package:file_manager/env.dart';
+import 'package:file_manager/extensions.dart';
 import 'package:file_manager/fse_view_type.dart';
+import 'package:file_manager/models/fav_item.dart';
 import 'package:file_manager/noop.dart';
 import 'package:file_manager/prefs_manager.dart';
 import 'package:file_manager/utils.dart';
@@ -18,10 +22,8 @@ import 'package:file_manager/widgets/side_nav.dart';
 import 'package:file_manager/widgets/text_filtering.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:streams/streams.dart';
-import 'package:file_manager/extensions.dart';
 import 'package:path/path.dart' as path;
-import 'package:collection/collection.dart';
+import 'package:streams/streams.dart';
 
 class _HistoryForwardIntent extends Intent {
   const _HistoryForwardIntent();
@@ -51,7 +53,9 @@ class _HomeState extends State<Home> {
   final bodyFocusNode = FocusNode();
   final searchTextController = TextEditingController();
   final searchFocusNode = FocusNode();
+
   late final prefsManager = PrefsManager.instance;
+  late final dbManager = DbManager.instance;
 
   final dirListController = ReplaySubject<DirListEvent>(size: 1);
 
@@ -70,11 +74,12 @@ class _HomeState extends State<Home> {
     searchTextController.clear();
     onDirChanged(dir);
 
+    dbManager.favItemsBoxListenable.removeListener(onFavItemsChanged);
     folderWatcherSubscription?.cancel();
     folderWatcherSubscription = dir.watch().listen(onDirWatcherCalled);
 
     _currentDirectory = dir;
-    setState(() {});
+    updateState();
   }
 
   var selectedFse = <String, FileSystemEntity>{};
@@ -217,8 +222,10 @@ class _HomeState extends State<Home> {
       }
     }
 
-    historyStack.add(dir);
-    historyIndex = historyStack.length - 1;
+    if (dir != historyStack.firstOrNull) {
+      historyStack.add(dir);
+      historyIndex = historyStack.length - 1;
+    }
 
     currentDirectory = dir;
   }
@@ -273,6 +280,37 @@ class _HomeState extends State<Home> {
   }
 
   bool isFseSelected(String path) => selectedFse.containsKey(path);
+
+  void onFavClick() {
+    if (_currentDirectory == kFavouritesFolder) {
+      return;
+    }
+
+    _currentDirectory = kFavouritesFolder;
+
+    folderWatcherSubscription?.cancel();
+
+    onFavItemsChanged();
+    dbManager.favItemsBoxListenable.addListener(onFavItemsChanged);
+    updateState();
+  }
+
+  void onFavItemsChanged() {
+    final entities = DbManager
+        .instance
+        .favItemsBoxListenable
+        .value //
+        .values
+        .map<FileSystemEntity>((val) {
+      if (val.type == FavItemType.directory) {
+        return Directory(val.path);
+      }
+
+      return File(val.path);
+    }).toList(growable: false);
+
+    dirListController.add(DirListChangedEvent(entities));
+  }
 
   @override
   void dispose() {
@@ -365,15 +403,18 @@ class _HomeState extends State<Home> {
                           child: SideNav(
                             onDirTap: onDirClicked,
                             selectedDir: currentDirectory,
+                            onFavClick: onFavClick,
                           ),
                         ),
                         Expanded(
                           child: ContextMenu(
-                            builder: (_) {
-                              return FolderGlobalContextMenu(
-                                directory: currentDirectory,
-                              );
-                            },
+                            builder: currentDirectory == kFavouritesFolder
+                                ? null
+                                : (_) {
+                                    return FolderGlobalContextMenu(
+                                      directory: currentDirectory,
+                                    );
+                                  },
                             child: StreamBuilder<DirListEvent>(
                               stream: dirListController,
                               initialData: const DirListLoadingEvent(),

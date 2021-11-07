@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:file_manager/db_manager.dart';
+import 'package:file_manager/extensions.dart';
 import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
@@ -8,7 +11,6 @@ import 'package:file_manager/widgets/fav_button.dart';
 import 'package:file_manager/widgets/file_last_modified_text.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
-import 'package:file_manager/extensions.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 
@@ -66,6 +68,7 @@ abstract class _BaseFolderState<T extends _BaseFolderWidget> extends State<T> {
     if (canDelete) {
       try {
         await widget.dir.delete();
+        unawaited(DbManager.instance.favItemsBoxListenable.value.delete(widget.dir.path));
       } catch (_) {}
     }
   }

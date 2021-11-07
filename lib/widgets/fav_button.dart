@@ -30,7 +30,7 @@ class FavButton extends StatelessWidget {
             } else {
               await box.put(
                 fse.path,
-                FavItem(path: fse.path, type: FavItemType.file),
+                FavItem(path: fse.path, type: fse is Directory ? FavItemType.directory : FavItemType.file),
               );
             }
           },
