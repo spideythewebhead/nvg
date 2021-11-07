@@ -65,7 +65,7 @@ class ShortcutsHelper extends StatelessWidget {
                       children: const [
                         _PrettyKey(displayName: 'shift'),
                         _Plus(),
-                        _PrettyKey(displayName: '?'),
+                        _PrettyKey(displayName: '/'),
                         _Colon(),
                         Text('Shows this helper'),
                       ],
@@ -77,6 +77,24 @@ class ShortcutsHelper extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class ShowShortcutsHelper extends StatelessWidget {
+  const ShowShortcutsHelper({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        _PrettyKey(displayName: 'shift'),
+        _Plus(),
+        _PrettyKey(displayName: '/'),
+        _Colon(),
+        Text('Shows helper'),
+      ],
     );
   }
 }

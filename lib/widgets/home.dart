@@ -525,6 +525,7 @@ class _HomeState extends State<Home> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          const ShowShortcutsHelper(),
                           const SizedBox(),
                           Row(
                             mainAxisSize: MainAxisSize.min,
