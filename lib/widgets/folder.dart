@@ -109,6 +109,7 @@ class _FolderGridWidgetState extends _BaseFolderState<FolderGridWidget> {
       ),
       child: RenameTextFieldPopup(
         show: isRenaming,
+        radius: const Radius.circular(4.0),
         onRename: onRename,
         onDismiss: () {
           isRenaming = false;
@@ -284,6 +285,7 @@ class _FolderListWidgetState extends _BaseFolderState<FolderListWidget> {
       ),
       child: RenameTextFieldPopup(
         show: isRenaming,
+        radius: const Radius.circular(4.0),
         onRename: onRename,
         onDismiss: () {
           isRenaming = false;

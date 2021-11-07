@@ -7,6 +7,7 @@ class _RenameEntityTextField extends StatefulWidget {
   final ValueChanged<String> onOk;
   final VoidCallback onDismiss;
   final RenderBox renderBox;
+  final Radius radius;
 
   const _RenameEntityTextField({
     Key? key,
@@ -14,6 +15,7 @@ class _RenameEntityTextField extends StatefulWidget {
     required this.onDismiss,
     // required this.position,
     required this.renderBox,
+    required this.radius,
   }) : super(key: key);
 
   @override
@@ -68,6 +70,7 @@ class _RenameEntityTextFieldState extends State<_RenameEntityTextField> {
                 clipper: _ObjectShapeClipper(
                   offset: widget.renderBox.localToGlobal(Offset.zero),
                   widgetSize: widget.renderBox.size,
+                  radius: widget.radius,
                 ),
                 child: const ColoredBox(color: Colors.black45),
               ),
@@ -154,12 +157,14 @@ class RenameTextFieldPopup extends StatefulWidget {
   final bool show;
   final ValueChanged<String> onRename;
   final VoidCallback onDismiss;
+  final Radius radius;
 
   const RenameTextFieldPopup({
     Key? key,
     required this.child,
     required this.onRename,
     required this.onDismiss,
+    required this.radius,
     this.show = false,
   }) : super(key: key);
 
@@ -184,6 +189,7 @@ class _RenameTextFieldPopupState extends State<RenameTextFieldPopup> {
               onOk: widget.onRename,
               onDismiss: widget.onDismiss,
               renderBox: renderBox,
+              radius: widget.radius,
               // position: offset,
             );
           },
@@ -210,45 +216,33 @@ class _RenameTextFieldPopupState extends State<RenameTextFieldPopup> {
 }
 
 class _ObjectShapeClipper extends CustomClipper<Path> {
+  final Radius radius;
   final Offset offset;
   final Size widgetSize;
 
   _ObjectShapeClipper({
     required this.offset,
     required this.widgetSize,
+    required this.radius,
   });
 
   @override
   Path getClip(Size size) {
     final path = Path();
 
-    // top half
-    path
-      ..moveTo(0.0, 0.0)
-      ..lineTo(0.0, offset.dy)
-      ..lineTo(size.width, offset.dy)
-      ..lineTo(size.width, 0.0);
+    path.addRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
-    // center start
-    path
-      ..moveTo(0.0, offset.dy)
-      ..lineTo(offset.dx, offset.dy)
-      ..lineTo(offset.dx, offset.dy + widgetSize.height)
-      ..lineTo(0.0, offset.dy + widgetSize.height);
+    path.addRRect(
+      RRect.fromLTRBR(
+        offset.dx,
+        offset.dy,
+        offset.dx + widgetSize.width,
+        offset.dy + widgetSize.height,
+        radius,
+      ),
+    );
 
-    // center end
-    path
-      ..moveTo(offset.dx + widgetSize.width, offset.dy)
-      ..lineTo(size.width, offset.dy)
-      ..lineTo(size.width, offset.dy + widgetSize.height)
-      ..lineTo(offset.dx + widgetSize.width, offset.dy + widgetSize.height);
-
-    // bottom half
-    path
-      ..moveTo(0.0, offset.dy + widgetSize.height)
-      ..lineTo(size.width, offset.dy + widgetSize.height)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0.0, size.height);
+    path.fillType = PathFillType.evenOdd;
 
     return path;
   }

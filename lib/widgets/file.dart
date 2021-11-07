@@ -111,6 +111,7 @@ class _FileGridWidgetState extends _BaseFileState<FileGridWidget> {
       child: RenameTextFieldPopup(
         show: isRenaming,
         onRename: onRename,
+        radius: const Radius.circular(4.0),
         onDismiss: () {
           isRenaming = false;
         },
@@ -282,6 +283,7 @@ class _FileListWidgetState extends _BaseFileState<FileListWidget> {
       },
       child: RenameTextFieldPopup(
         show: isRenaming,
+        radius: const Radius.circular(4.0),
         onRename: onRename,
         onDismiss: () {
           isRenaming = false;
