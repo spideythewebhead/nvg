@@ -4,11 +4,13 @@ import 'package:flutter/material.dart';
 class TextFiltering extends StatelessWidget {
   final FocusNode focusNode;
   final TextEditingController controller;
+  final VoidCallback onEnterPressed;
 
   const TextFiltering({
     Key? key,
     required this.focusNode,
     required this.controller,
+    required this.onEnterPressed,
   }) : super(key: key);
 
   @override
@@ -40,6 +42,10 @@ class TextFiltering extends StatelessWidget {
               ),
             ),
           ),
+          textInputAction: TextInputAction.none,
+          onSubmitted: (s) {
+            onEnterPressed();
+          },
           focusNode: focusNode,
           controller: controller,
         ),

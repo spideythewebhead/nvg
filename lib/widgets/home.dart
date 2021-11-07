@@ -106,6 +106,8 @@ class _HomeState extends State<Home> {
     )
   };
 
+  List<FileSystemEntity>? entitiesSnapshot;
+
   @override
   void initState() {
     super.initState();
@@ -418,6 +420,19 @@ class _HomeState extends State<Home> {
                                   child: TextFiltering(
                                     controller: searchTextController,
                                     focusNode: searchFocusNode,
+                                    onEnterPressed: () {
+                                      if ((entitiesSnapshot?.length ?? 0) == 1) {
+                                        final FileSystemEntity entity = entitiesSnapshot![0];
+
+                                        if (entity is Directory) {
+                                          onDirClicked(entity);
+                                        } else {
+                                          onFileDoubleClicked(entity as File);
+                                        }
+
+                                        bodyFocusNode.requestFocus();
+                                      }
+                                    },
                                   ),
                                 ),
                                 Flexible(
@@ -426,6 +441,7 @@ class _HomeState extends State<Home> {
                                     initialData: const DirListLoadingEvent(),
                                     builder: (context, snapshot) {
                                       if (snapshot.data is DirListLoadingEvent) {
+                                        entitiesSnapshot = null;
                                         return const LinearProgressIndicator();
                                       }
 
@@ -467,6 +483,8 @@ class _HomeState extends State<Home> {
                                           return regexp.hasMatch(entity.name);
                                         }).toList(growable: false);
                                       }
+
+                                      entitiesSnapshot = entities;
 
                                       if (prefsManager.fseViewType == FseViewType.grid) {
                                         return FseGridView(
