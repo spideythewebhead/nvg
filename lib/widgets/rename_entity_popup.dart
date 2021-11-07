@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class _RenameEntityTextField extends StatefulWidget {
-  final Offset position;
+  // final Offset position;
   final ValueChanged<String> onOk;
   final VoidCallback onDismiss;
+  final RenderBox renderBox;
 
   const _RenameEntityTextField({
     Key? key,
     required this.onOk,
     required this.onDismiss,
-    required this.position,
+    // required this.position,
+    required this.renderBox,
   }) : super(key: key);
 
   @override
@@ -50,64 +52,64 @@ class _RenameEntityTextFieldState extends State<_RenameEntityTextField> {
 
   @override
   Widget build(BuildContext context) {
+    final offset = widget.renderBox.size
+        .center(
+          widget.renderBox.localToGlobal(Offset.zero),
+        )
+        .translate(0, widget.renderBox.size.height / 2.0);
+
     return Positioned.fill(
       child: Stack(
         children: [
           Positioned.fill(
             child: GestureDetector(
               onTap: widget.onDismiss,
-              child: const ColoredBox(color: Colors.black38),
+              child: ClipPath(
+                clipper: _ObjectShapeClipper(
+                  offset: widget.renderBox.localToGlobal(Offset.zero),
+                  widgetSize: widget.renderBox.size,
+                ),
+                child: const ColoredBox(color: Colors.black45),
+              ),
             ),
           ),
           CustomSingleChildLayout(
-            delegate: _PositionDelegate(widget.position),
+            delegate: _PositionDelegate(offset),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
                 maxWidth: 350.0,
               ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 12.0,
-                    height: 12.0,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Theme.of(context).colorScheme.primaryVariant,
-                    ),
-                  ),
-                  Card(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: TextField(
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(
-                                  vertical: 12.0,
-                                  horizontal: 8.0,
-                                ),
-                              ),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                  allowedEntityRegExp,
-                                )
-                              ],
-                              focusNode: focusNode,
-                              onSubmitted: widget.onOk,
-                              controller: textController,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: TextField(
+                          decoration: const InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.symmetric(
+                              vertical: 12.0,
+                              horizontal: 8.0,
                             ),
                           ),
-                          ElevatedButton(
-                            child: const Text('OK'),
-                            onPressed: () => widget.onOk(textController.text),
-                          ),
-                        ],
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              allowedEntityRegExp,
+                            )
+                          ],
+                          focusNode: focusNode,
+                          onSubmitted: widget.onOk,
+                          controller: textController,
+                        ),
                       ),
-                    ),
+                      ElevatedButton(
+                        child: const Text('OK'),
+                        onPressed: () => widget.onOk(textController.text),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -176,18 +178,13 @@ class _RenameTextFieldPopupState extends State<RenameTextFieldPopup> {
       Future.microtask(() {
         final renderBox = context.findRenderObject() as RenderBox;
 
-        final offset = renderBox.size
-            .center(
-              renderBox.localToGlobal(Offset.zero),
-            )
-            .translate(0, renderBox.size.height / 2.0);
-
         overlayEntry = OverlayEntry(
           builder: (context) {
             return _RenameEntityTextField(
               onOk: widget.onRename,
               onDismiss: widget.onDismiss,
-              position: offset,
+              renderBox: renderBox,
+              // position: offset,
             );
           },
         );
@@ -209,5 +206,55 @@ class _RenameTextFieldPopupState extends State<RenameTextFieldPopup> {
   @override
   Widget build(BuildContext context) {
     return widget.child;
+  }
+}
+
+class _ObjectShapeClipper extends CustomClipper<Path> {
+  final Offset offset;
+  final Size widgetSize;
+
+  _ObjectShapeClipper({
+    required this.offset,
+    required this.widgetSize,
+  });
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+
+    // top half
+    path
+      ..moveTo(0.0, 0.0)
+      ..lineTo(0.0, offset.dy)
+      ..lineTo(size.width, offset.dy)
+      ..lineTo(size.width, 0.0);
+
+    // center start
+    path
+      ..moveTo(0.0, offset.dy)
+      ..lineTo(offset.dx, offset.dy)
+      ..lineTo(offset.dx, offset.dy + widgetSize.height)
+      ..lineTo(0.0, offset.dy + widgetSize.height);
+
+    // center end
+    path
+      ..moveTo(offset.dx + widgetSize.width, offset.dy)
+      ..lineTo(size.width, offset.dy)
+      ..lineTo(size.width, offset.dy + widgetSize.height)
+      ..lineTo(offset.dx + widgetSize.width, offset.dy + widgetSize.height);
+
+    // bottom half
+    path
+      ..moveTo(0.0, offset.dy + widgetSize.height)
+      ..lineTo(size.width, offset.dy + widgetSize.height)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0.0, size.height);
+
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper oldClipper) {
+    return true;
   }
 }
