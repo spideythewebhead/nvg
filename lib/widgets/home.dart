@@ -3,12 +3,12 @@ import 'dart:io';
 
 import 'package:file_manager/env.dart';
 import 'package:file_manager/fse_view_type.dart';
+import 'package:file_manager/noop.dart';
+import 'package:file_manager/prefs_manager.dart';
 import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/current_path_title.dart';
 import 'package:file_manager/widgets/dir_list_event.dart';
-import 'package:file_manager/widgets/file.dart';
-import 'package:file_manager/widgets/folder.dart';
 import 'package:file_manager/widgets/folder_global_context_menu.dart';
 import 'package:file_manager/widgets/fse_grid_view.dart';
 import 'package:file_manager/widgets/fse_list_view.dart';
@@ -46,6 +46,7 @@ class _HomeState extends State<Home> {
   final bodyFocusNode = FocusNode();
   final searchTextController = TextEditingController();
   final searchFocusNode = FocusNode();
+  late final prefsManager = PrefsManager.instance;
 
   final dirListController = ReplaySubject<DirListEvent>(size: 1);
 
@@ -71,8 +72,6 @@ class _HomeState extends State<Home> {
     setState(() {});
   }
 
-  var showHidden = false;
-
   var selectedFse = <String, FileSystemEntity>{};
 
   late final shortcutActions = {
@@ -92,8 +91,6 @@ class _HomeState extends State<Home> {
     )
   };
 
-  final fseViewType = ValueNotifier(FseViewType.grid);
-
   @override
   void initState() {
     super.initState();
@@ -109,7 +106,12 @@ class _HomeState extends State<Home> {
 
     HardwareKeyboard.instance.addHandler(keyPressed);
 
-    searchTextController.addListener(() => setState(() {}));
+    searchTextController.addListener(updateState);
+    prefsManager.addListener(updateState);
+  }
+
+  void updateState() {
+    setState(noop);
   }
 
   void onDirChanged(Directory dir) {
@@ -120,7 +122,7 @@ class _HomeState extends State<Home> {
 
   void onDirWatcherCalled(FileSystemEvent event) async {
     if (event is FileSystemCreateEvent || event is FileSystemDeleteEvent) {
-      if (path.basename(event.path)[0] == '.' && !showHidden) {
+      if (path.basename(event.path)[0] == '.' && !prefsManager.showHidden) {
         return;
       }
     }
@@ -317,18 +319,11 @@ class _HomeState extends State<Home> {
                           ),
                         ),
                         FMIconButton(
-                          child: ValueListenableBuilder<FseViewType>(
-                            valueListenable: fseViewType,
-                            builder: (context, value, child) {
-                              if (value == FseViewType.grid) {
-                                return const Icon(Icons.grid_view);
-                              }
-
-                              return const Icon(Icons.view_list);
-                            },
-                          ),
+                          child: prefsManager.fseViewType == FseViewType.grid
+                              ? const Icon(Icons.grid_view)
+                              : const Icon(Icons.view_list),
                           onTap: () {
-                            fseViewType.value = fseViewType.value.next;
+                            prefsManager.changeFseViewType(prefsManager.fseViewType.next);
                           },
                         ),
                         FMIconButton(
@@ -394,7 +389,7 @@ class _HomeState extends State<Home> {
                                   );
                                 }
 
-                                if (!showHidden) {
+                                if (!prefsManager.showHidden) {
                                   entities = entities.where((entity) {
                                     if (entity.name[0] == '.') {
                                       return false;
@@ -415,27 +410,22 @@ class _HomeState extends State<Home> {
                                   }).toList(growable: false);
                                 }
 
-                                return ValueListenableBuilder(
-                                  valueListenable: fseViewType,
-                                  builder: (context, viewType, child) {
-                                    if (viewType == FseViewType.grid) {
-                                      return FseGridView(
-                                        entities: entities,
-                                        onDirDoubleClick: onDirClicked,
-                                        onFileDoubleClick: onFileDoubleClicked,
-                                        onClick: onFSEClick,
-                                        isSelected: isFseSelected,
-                                      );
-                                    }
+                                if (prefsManager.fseViewType == FseViewType.grid) {
+                                  return FseGridView(
+                                    entities: entities,
+                                    onDirDoubleClick: onDirClicked,
+                                    onFileDoubleClick: onFileDoubleClicked,
+                                    onClick: onFSEClick,
+                                    isSelected: isFseSelected,
+                                  );
+                                }
 
-                                    return FseListView(
-                                      entities: entities,
-                                      onDirDoubleClick: onDirClicked,
-                                      onFileDoubleClick: onFileDoubleClicked,
-                                      onClick: onFSEClick,
-                                      isSelected: isFseSelected,
-                                    );
-                                  },
+                                return FseListView(
+                                  entities: entities,
+                                  onDirDoubleClick: onDirClicked,
+                                  onFileDoubleClick: onFileDoubleClicked,
+                                  onClick: onFSEClick,
+                                  isSelected: isFseSelected,
                                 );
                               },
                             ),
@@ -461,11 +451,9 @@ class _HomeState extends State<Home> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Checkbox(
-                                value: showHidden,
+                                value: prefsManager.showHidden,
                                 onChanged: (value) {
-                                  setState(() {
-                                    showHidden = value!;
-                                  });
+                                  prefsManager.changeShowHidden(value!);
                                 },
                               ),
                               const Text('Show Hidden?'),

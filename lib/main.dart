@@ -1,9 +1,12 @@
+import 'package:file_manager/prefs_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/widgets/context_menu_root.dart';
 import 'package:file_manager/widgets/home.dart';
 import 'package:file_manager/extensions.dart';
 
-void main(List<String> args) {
+void main(List<String> args) async {
+  await PrefsManager.init();
+
   runApp(
     FileManagerApp(
       args: args,
