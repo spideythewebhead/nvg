@@ -27,14 +27,14 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
-  cupertino_icons: ^1.0.2
   flutter:
     sdk: flutter
   intl: null
-  path: ^1.8.0
-  shared_preferences: ^2.0.8
+  path: 1.8.0
+  shared_preferences: 2.0.8
   streams:
     path: ../streams
+  hive: 2.0.4
 
 dev_dependencies:
   # The "flutter_lints" package below contains a set of recommended lints to

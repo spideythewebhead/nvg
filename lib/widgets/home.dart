@@ -13,6 +13,7 @@ import 'package:file_manager/widgets/folder_global_context_menu.dart';
 import 'package:file_manager/widgets/fse_grid_view.dart';
 import 'package:file_manager/widgets/fse_list_view.dart';
 import 'package:file_manager/widgets/icon_button.dart';
+import 'package:file_manager/widgets/shortcuts_helper.dart';
 import 'package:file_manager/widgets/side_nav.dart';
 import 'package:file_manager/widgets/text_filtering.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +29,10 @@ class _HistoryForwardIntent extends Intent {
 
 class _HistoryBackwardIntent extends Intent {
   const _HistoryBackwardIntent();
+}
+
+class _ShowShortcutsIntent extends Intent {
+  const _ShowShortcutsIntent();
 }
 
 class Home extends StatefulWidget {
@@ -87,6 +92,11 @@ class _HomeState extends State<Home> {
         if (1 + historyIndex != historyStack.length) {
           historyForward();
         }
+      },
+    ),
+    _ShowShortcutsIntent: CallbackAction<_ShowShortcutsIntent>(
+      onInvoke: (intent) {
+        ShortcutsHelper.show(context);
       },
     )
   };
@@ -285,6 +295,7 @@ class _HomeState extends State<Home> {
           shortcuts: const {
             SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): _HistoryBackwardIntent(),
             SingleActivator(LogicalKeyboardKey.arrowRight, alt: true): _HistoryForwardIntent(),
+            SingleActivator(LogicalKeyboardKey.question, shift: true): _ShowShortcutsIntent(),
           },
           child: Actions(
             actions: shortcutActions,
