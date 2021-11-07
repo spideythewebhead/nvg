@@ -5,6 +5,7 @@ import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
 import 'package:file_manager/widgets/file_last_modified_text.dart';
+import 'package:file_manager/widgets/icon_button.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/extensions.dart';
@@ -236,13 +237,13 @@ class FileListWidget extends _BaseFileWidget {
 }
 
 class _FileListWidgetState extends _BaseFileState<FileListWidget> {
-  late Future<FileStat> fileStatFuture;
+  final fileStat = ValueNotifier<FileStat?>(null);
 
   @override
   void initState() {
     super.initState();
 
-    fileStatFuture = widget.file.stat();
+    _getFolderStat();
   }
 
   @override
@@ -250,8 +251,16 @@ class _FileListWidgetState extends _BaseFileState<FileListWidget> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.file != widget.file) {
-      fileStatFuture = widget.file.stat();
+      _getFolderStat();
     }
+  }
+
+  void _getFolderStat() {
+    widget.file.stat().then((stats) {
+      if (mounted) {
+        fileStat.value = stats;
+      }
+    });
   }
 
   @override
@@ -315,12 +324,12 @@ class _FileListWidgetState extends _BaseFileState<FileListWidget> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      FutureBuilder<FileStat>(
-                        future: fileStatFuture,
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox();
+                      ValueListenableBuilder<FileStat?>(
+                        valueListenable: fileStat,
+                        builder: (context, stats, child) {
+                          if (stats == null) return const SizedBox();
 
-                          return FileLastModified(datetime: snapshot.data!.modified);
+                          return FileLastModified(datetime: stats.modified);
                         },
                       ),
                     ],

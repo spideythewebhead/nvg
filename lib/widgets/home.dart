@@ -125,9 +125,18 @@ class _HomeState extends State<Home> {
       }
     }
 
-    if (event is FileSystemCreateEvent) {
-      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
+    final lastEvent = dirListController.currentItems.first;
+    late List<FileSystemEntity> entities;
 
+    if (lastEvent is DirListLoadedEvent) {
+      entities = lastEvent.entities;
+    } else if (lastEvent is DirListChangedEvent) {
+      entities = lastEvent.entities;
+    } else {
+      return;
+    }
+
+    if (event is FileSystemCreateEvent) {
       dirListController.add(
         DirListChangedEvent(
           sortEntities([
@@ -137,8 +146,6 @@ class _HomeState extends State<Home> {
         ),
       );
     } else if (event is FileSystemDeleteEvent) {
-      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
-
       final index = entities.indexWhere((entity) => entity.path == event.path);
 
       if (index != -1) {
@@ -150,8 +157,6 @@ class _HomeState extends State<Home> {
         ));
       }
     } else if (event is FileSystemModifyEvent) {
-      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
-
       final index = entities.indexWhere((entity) => entity.path == event.path);
 
       if (index != -1) {
@@ -162,8 +167,6 @@ class _HomeState extends State<Home> {
         );
       }
     } else if (event is FileSystemMoveEvent) {
-      final entities = dirListController.currentItems[0] as List<FileSystemEntity>;
-
       final index = entities.indexWhere((entity) => entity.path == event.path);
 
       if (index != -1) {
@@ -241,7 +244,8 @@ class _HomeState extends State<Home> {
 
     if (FocusScope.of(context).hasFocus && keyChar != null && allowedEntityRegExp.hasMatch(keyChar)) {
       searchFocusNode.requestFocus();
-    } else if (event.logicalKey == LogicalKeyboardKey.escape && searchFocusNode.hasFocus) {
+    } else if (event.logicalKey == LogicalKeyboardKey.escape &&
+        (searchFocusNode.hasFocus || searchTextController.text.isNotEmpty)) {
       bodyFocusNode.requestFocus();
       // searchFocusNode.unfocus();
       searchTextController.clear();

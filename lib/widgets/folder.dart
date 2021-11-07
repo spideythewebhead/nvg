@@ -239,13 +239,13 @@ class FolderListWidget extends _BaseFolderWidget {
 }
 
 class _FolderListWidgetState extends _BaseFolderState<FolderListWidget> {
-  late Future<FileStat> fileStatFuture;
+  final fileStat = ValueNotifier<FileStat?>(null);
 
   @override
   void initState() {
     super.initState();
 
-    fileStatFuture = widget.dir.stat();
+    _getFileStat();
   }
 
   @override
@@ -253,8 +253,16 @@ class _FolderListWidgetState extends _BaseFolderState<FolderListWidget> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.dir != widget.dir) {
-      fileStatFuture = widget.dir.stat();
+      _getFileStat();
     }
+  }
+
+  void _getFileStat() {
+    widget.dir.stat().then((stats) {
+      if (mounted) {
+        fileStat.value = stats;
+      }
+    });
   }
 
   @override
@@ -317,12 +325,12 @@ class _FolderListWidgetState extends _BaseFolderState<FolderListWidget> {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      FutureBuilder<FileStat>(
-                        future: fileStatFuture,
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox();
+                      ValueListenableBuilder<FileStat?>(
+                        valueListenable: fileStat,
+                        builder: (context, stats, child) {
+                          if (stats == null) return const SizedBox();
 
-                          return FileLastModified(datetime: snapshot.data!.modified);
+                          return FileLastModified(datetime: stats.modified);
                         },
                       ),
                     ],
