@@ -1,3 +1,4 @@
+import 'package:file_manager/db_manager.dart';
 import 'package:file_manager/prefs_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:file_manager/widgets/context_menu_root.dart';
@@ -5,7 +6,10 @@ import 'package:file_manager/widgets/home.dart';
 import 'package:file_manager/extensions.dart';
 
 void main(List<String> args) async {
-  await PrefsManager.init();
+  await Future.wait([
+    PrefsManager.init(),
+    DbManager.init(),
+  ]);
 
   runApp(
     FileManagerApp(

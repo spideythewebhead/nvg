@@ -15,9 +15,11 @@ class PrefsManager extends ChangeNotifier {
     if (instance == null) {
       instance = PrefsManager();
       await instance._init();
+
+      _instance = instance;
     }
 
-    return _instance = instance;
+    return instance;
   }
 
   late final SharedPreferences _sharedPrefs;

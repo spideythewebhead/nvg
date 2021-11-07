@@ -1,14 +1,14 @@
 import 'dart:io';
 
+import 'package:file_manager/extensions.dart';
 import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
+import 'package:file_manager/widgets/fav_button.dart';
 import 'package:file_manager/widgets/file_last_modified_text.dart';
-import 'package:file_manager/widgets/icon_button.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
-import 'package:file_manager/extensions.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 
@@ -293,49 +293,50 @@ class _FileListWidgetState extends _BaseFileState<FileListWidget> {
             isRenaming = true;
           },
           onDelete: onDelete,
-          child: Tooltip(
-            message: widget.file.name,
-            waitDuration: const Duration(seconds: 1),
-            child: Material(
-              type: MaterialType.canvas,
-              color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
-              child: InkWell(
-                customBorder: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4.0),
+          child: Material(
+            type: MaterialType.canvas,
+            color: widget.isSelected ? theme.colorScheme.secondary : Colors.transparent,
+            child: InkWell(
+              customBorder: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4.0),
+              ),
+              hoverColor: theme.colorScheme.primaryVariant,
+              focusNode: focusNode,
+              onTap: () {
+                focusNode.requestFocus();
+                widget.onClick(widget.file);
+              },
+              onDoubleTap: () => widget.onDoubleClick(widget.file),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 4.0,
+                  vertical: 6.0,
                 ),
-                hoverColor: theme.colorScheme.primaryVariant,
-                focusNode: focusNode,
-                onTap: () {
-                  focusNode.requestFocus();
-                  widget.onClick(widget.file);
-                },
-                onDoubleTap: () => widget.onDoubleClick(widget.file),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4.0,
-                    vertical: 6.0,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      const SizedBox(width: 14.0),
-                      Expanded(
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    const SizedBox(width: 14.0),
+                    Expanded(
+                      child: Tooltip(
+                        message: widget.file.name,
+                        waitDuration: const Duration(seconds: 1),
                         child: Text(
                           widget.file.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      ValueListenableBuilder<FileStat?>(
-                        valueListenable: fileStat,
-                        builder: (context, stats, child) {
-                          if (stats == null) return const SizedBox();
+                    ),
+                    ValueListenableBuilder<FileStat?>(
+                      valueListenable: fileStat,
+                      builder: (context, stats, child) {
+                        if (stats == null) return const SizedBox();
 
-                          return FileLastModified(datetime: stats.modified);
-                        },
-                      ),
-                    ],
-                  ),
+                        return FileLastModified(datetime: stats.modified);
+                      },
+                    ),
+                    FavButton(fse: widget.file),
+                  ],
                 ),
               ),
             ),

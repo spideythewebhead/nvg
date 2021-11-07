@@ -4,6 +4,7 @@ import 'package:file_manager/utils.dart';
 import 'package:file_manager/widgets/common_actions.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/delete_confirm_dialog.dart';
+import 'package:file_manager/widgets/fav_button.dart';
 import 'package:file_manager/widgets/file_last_modified_text.dart';
 import 'package:file_manager/widgets/rename_entity_popup.dart';
 import 'package:flutter/material.dart';
@@ -335,6 +336,7 @@ class _FolderListWidgetState extends _BaseFolderState<FolderListWidget> {
                           return FileLastModified(datetime: stats.modified);
                         },
                       ),
+                      FavButton(fse: widget.dir),
                     ],
                   ),
                 ),
