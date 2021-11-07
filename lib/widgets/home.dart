@@ -327,7 +327,10 @@ class _HomeState extends State<Home> {
     final theme = Theme.of(context);
 
     return GestureDetector(
-      onTap: bodyFocusNode.requestFocus,
+      onTap: () {
+        bodyFocusNode.requestFocus();
+        searchTextController.clear();
+      },
       child: Scaffold(
         body: Shortcuts(
           shortcuts: const {
