@@ -383,12 +383,6 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                 ),
-                Center(
-                  child: TextFiltering(
-                    controller: searchTextController,
-                    focusNode: searchFocusNode,
-                  ),
-                ),
                 Expanded(
                   child: Focus(
                     focusNode: bodyFocusNode,
@@ -415,71 +409,83 @@ class _HomeState extends State<Home> {
                                       directory: currentDirectory,
                                     );
                                   },
-                            child: StreamBuilder<DirListEvent>(
-                              stream: dirListController,
-                              initialData: const DirListLoadingEvent(),
-                              builder: (context, snapshot) {
-                                if (snapshot.data is DirListLoadingEvent) {
-                                  return const LinearProgressIndicator();
-                                }
+                            child: Column(
+                              children: [
+                                Center(
+                                  child: TextFiltering(
+                                    controller: searchTextController,
+                                    focusNode: searchFocusNode,
+                                  ),
+                                ),
+                                Flexible(
+                                  child: StreamBuilder<DirListEvent>(
+                                    stream: dirListController,
+                                    initialData: const DirListLoadingEvent(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.data is DirListLoadingEvent) {
+                                        return const LinearProgressIndicator();
+                                      }
 
-                                final data = snapshot.data;
-                                late List<FileSystemEntity> entities;
+                                      final data = snapshot.data;
+                                      late List<FileSystemEntity> entities;
 
-                                if (data is DirListLoadedEvent) {
-                                  entities = data.entities;
-                                } else if (data is DirListChangedEvent) {
-                                  entities = data.entities;
-                                }
+                                      if (data is DirListLoadedEvent) {
+                                        entities = data.entities;
+                                      } else if (data is DirListChangedEvent) {
+                                        entities = data.entities;
+                                      }
 
-                                if (entities.isEmpty) {
-                                  return Center(
-                                    child: Text(
-                                      'Empty folder',
-                                      style: theme.textTheme.headline4,
-                                    ),
-                                  );
-                                }
+                                      if (entities.isEmpty) {
+                                        return Center(
+                                          child: Text(
+                                            'Empty folder',
+                                            style: theme.textTheme.headline4,
+                                          ),
+                                        );
+                                      }
 
-                                if (!prefsManager.showHidden) {
-                                  entities = entities.where((entity) {
-                                    if (entity.name[0] == '.') {
-                                      return false;
-                                    }
+                                      if (!prefsManager.showHidden) {
+                                        entities = entities.where((entity) {
+                                          if (entity.name[0] == '.') {
+                                            return false;
+                                          }
 
-                                    return true;
-                                  }).toList(growable: false);
-                                }
+                                          return true;
+                                        }).toList(growable: false);
+                                      }
 
-                                if (searchTextController.text.isNotEmpty) {
-                                  final regexp = RegExp(
-                                    searchTextController.text.replaceAll('.', '\\.'),
-                                    caseSensitive: false,
-                                  );
+                                      if (searchTextController.text.isNotEmpty) {
+                                        final regexp = RegExp(
+                                          searchTextController.text.replaceAll('.', '\\.'),
+                                          caseSensitive: false,
+                                        );
 
-                                  entities = entities.where((entity) {
-                                    return regexp.hasMatch(entity.name);
-                                  }).toList(growable: false);
-                                }
+                                        entities = entities.where((entity) {
+                                          return regexp.hasMatch(entity.name);
+                                        }).toList(growable: false);
+                                      }
 
-                                if (prefsManager.fseViewType == FseViewType.grid) {
-                                  return FseGridView(
-                                    entities: entities,
-                                    onDirDoubleClick: onDirClicked,
-                                    onFileDoubleClick: onFileDoubleClicked,
-                                    onClick: onFSEClick,
-                                    isSelected: isFseSelected,
-                                  );
-                                }
+                                      if (prefsManager.fseViewType == FseViewType.grid) {
+                                        return FseGridView(
+                                          entities: entities,
+                                          onDirDoubleClick: onDirClicked,
+                                          onFileDoubleClick: onFileDoubleClicked,
+                                          onClick: onFSEClick,
+                                          isSelected: isFseSelected,
+                                        );
+                                      }
 
-                                return FseListView(
-                                  entities: entities,
-                                  onDirDoubleClick: onDirClicked,
-                                  onFileDoubleClick: onFileDoubleClicked,
-                                  onClick: onFSEClick,
-                                  isSelected: isFseSelected,
-                                );
-                              },
+                                      return FseListView(
+                                        entities: entities,
+                                        onDirDoubleClick: onDirClicked,
+                                        onFileDoubleClick: onFileDoubleClicked,
+                                        onClick: onFSEClick,
+                                        isSelected: isFseSelected,
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

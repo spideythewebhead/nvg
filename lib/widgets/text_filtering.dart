@@ -19,7 +19,8 @@ class TextFiltering extends StatelessWidget {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOutSine,
-          height: focusNode.hasFocus ? 42.0 : 0.0,
+          height: focusNode.hasFocus ? 50.0 : 0.0,
+          padding: focusNode.hasFocus ? const EdgeInsets.symmetric(vertical: 4.0) : EdgeInsets.zero,
           width: 300.0,
           child: child,
         );
