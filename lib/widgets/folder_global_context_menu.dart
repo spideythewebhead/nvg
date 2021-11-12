@@ -29,7 +29,7 @@ class FolderGlobalContextMenuState extends State<FolderGlobalContextMenu> {
         padding: const EdgeInsets.all(8.0),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
-            maxWidth: 200.0,
+            minWidth: 200.0,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

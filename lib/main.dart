@@ -43,8 +43,8 @@ class FileManagerApp extends StatelessWidget {
         ),
         textTheme: const TextTheme(
           bodyText1: TextStyle(
-            fontSize: 16.0,
-            fontWeight: FontWeight.w500,
+            fontSize: 15.0,
+            fontWeight: FontWeight.bold,
           ),
           bodyText2: TextStyle(
             fontSize: 14.0,

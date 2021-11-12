@@ -94,19 +94,47 @@ class _ContextMenuWrapperState extends State<_ContextMenuWrapper> {
               onTap: widget.remove,
             ),
           ),
-          Positioned(
-            left: widget.position.dx,
-            top: widget.position.dy,
+          CustomSingleChildLayout(
+            delegate: _PositionDelegate(
+              widget.position,
+            ),
             child: Listener(
               behavior: HitTestBehavior.translucent,
               onPointerUp: (_) {
                 widget.remove();
               },
-              child: widget.builder(context),
+              child: IntrinsicWidth(child: widget.builder(context)),
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+class _PositionDelegate extends SingleChildLayoutDelegate {
+  final Offset preferredPosition;
+
+  _PositionDelegate(this.preferredPosition);
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    var dx = preferredPosition.dx;
+    var dy = preferredPosition.dy;
+
+    if (dx + childSize.width + 8.0 >= size.width) {
+      dx = size.width - childSize.width - 8.0;
+    }
+
+    if (dy + childSize.height + 8.0 >= size.height) {
+      dy = size.height - childSize.height - 8.0;
+    }
+
+    return Offset(dx, dy);
+  }
+
+  @override
+  bool shouldRelayout(covariant _PositionDelegate oldDelegate) {
+    return oldDelegate.preferredPosition != preferredPosition;
   }
 }

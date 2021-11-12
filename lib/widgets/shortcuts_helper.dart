@@ -27,6 +27,26 @@ class ShortcutsHelper extends StatelessWidget {
                   children: [
                     Row(
                       children: const [
+                        _PrettyKey(displayName: 'ctrl'),
+                        _Plus(),
+                        _PrettyKey(displayName: 'T'),
+                        _Colon(),
+                        Text('Add new tab'),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: const [
+                        _PrettyKey(displayName: 'ctrl'),
+                        _Plus(),
+                        _PrettyKey(displayName: 'W'),
+                        _Colon(),
+                        Text('Close selected tab'),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: const [
                         _PrettyKey(displayName: 'alt'),
                         _Plus(),
                         _PrettyKey(displayName: 'right arrow'),
@@ -93,7 +113,7 @@ class ShowShortcutsHelper extends StatelessWidget {
         _Plus(),
         _PrettyKey(displayName: '/'),
         _Colon(),
-        Text('Shows helper'),
+        Text('Show shortcuts'),
       ],
     );
   }

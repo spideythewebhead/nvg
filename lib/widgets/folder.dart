@@ -182,41 +182,37 @@ class _ContextMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Center(
-      child: IntrinsicWidth(
-        child: Material(
-          color: theme.dialogBackgroundColor,
-          borderRadius: BorderRadius.circular(6.0),
-          elevation: 2.0,
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: 200.0,
+    return Material(
+      color: theme.dialogBackgroundColor,
+      borderRadius: BorderRadius.circular(6.0),
+      elevation: 2.0,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: 200.0,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextButton(
+                child: const Text('Rename (F2)'),
+                onPressed: onRename,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    child: const Text('Rename (F2)'),
-                    onPressed: onRename,
-                  ),
-                  TextButton(
-                    child: const Text('Delete (Delete)'),
-                    onPressed: onDelete,
-                  ),
-                  TextButton(
-                    onPressed: onCopyPath,
-                    child: const Text('Copy path'),
-                  ),
-                  TextButton(
-                    child: const Text('Open in terminal'),
-                    onPressed: openInTerminal,
-                  ),
-                ],
+              TextButton(
+                child: const Text('Delete (Delete)'),
+                onPressed: onDelete,
               ),
-            ),
+              TextButton(
+                onPressed: onCopyPath,
+                child: const Text('Copy path'),
+              ),
+              TextButton(
+                child: const Text('Open in terminal'),
+                onPressed: openInTerminal,
+              ),
+            ],
           ),
         ),
       ),
