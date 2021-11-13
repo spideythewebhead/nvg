@@ -123,10 +123,11 @@ class _AlmostTerminalState extends State<AlmostTerminal> {
     final tp = TextPainter(
       text: TextSpan(
         text: textController.text,
-        style: GoogleFonts.firaMono(),
+        style: GoogleFonts.jetBrainsMono(),
       ),
       textDirection: TextDirection.ltr,
     )..layout();
+
     return Offset(
       tp.width + focusNode.offset.dx,
       focusNode.offset.dy,
@@ -187,6 +188,8 @@ class _AlmostTerminalState extends State<AlmostTerminal> {
     });
   }
 
+  final k = GlobalKey<ScrollableState>();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -199,76 +202,82 @@ class _AlmostTerminalState extends State<AlmostTerminal> {
           borderRadius: BorderRadius.circular(8.0),
           color: theme.colorScheme.background,
           elevation: 8.0,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Flexible(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(6.0),
-                  itemCount: commands.length,
-                  controller: scrollController,
-                  itemBuilder: (context, index) {
-                    final cmd = commands[index];
+          child: Stack(
+            children: [
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Flexible(
+                    child: ListView.builder(
+                      key: k,
+                      padding: const EdgeInsets.all(6.0),
+                      itemCount: commands.length,
+                      controller: scrollController,
+                      itemBuilder: (context, index) {
+                        final cmd = commands[index];
 
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('\$ '),
-                              Text(cmd.command),
-                              const SizedBox(width: 8.0),
-                              Text(
-                                cmdDateFormat.format(cmd.executedAt),
-                                style: Theme.of(context).textTheme.caption,
-                              )
+                              Row(
+                                children: [
+                                  const Text('\$ '),
+                                  Text(cmd.command),
+                                  const SizedBox(width: 8.0),
+                                  Text(
+                                    cmdDateFormat.format(cmd.executedAt),
+                                    style: Theme.of(context).textTheme.caption,
+                                  )
+                                ],
+                              ),
+                              if (cmd.output.isNotEmpty)
+                                Card(
+                                  elevation: 4.0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(6.0),
+                                  ),
+                                  margin: const EdgeInsets.symmetric(
+                                    vertical: 6.0,
+                                    horizontal: 12.0,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Text(
+                                      cmd.output,
+                                      key: ValueKey(index),
+                                      style: GoogleFonts.firaMono(),
+                                    ),
+                                  ),
+                                )
                             ],
                           ),
-                          if (cmd.output.isNotEmpty)
-                            Card(
-                              elevation: 4.0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6.0),
-                              ),
-                              margin: const EdgeInsets.symmetric(
-                                vertical: 6.0,
-                                horizontal: 12.0,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Text(
-                                  cmd.output,
-                                  style: GoogleFonts.firaMono(),
-                                ),
-                              ),
-                            )
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4.0),
-                  child: TextField(
-                    textInputAction: TextInputAction.none,
-                    controller: textController,
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      filled: true,
-                      prefix: Text('\$  '),
+                        );
+                      },
                     ),
-                    focusNode: focusNode,
-                    autofocus: true,
-                    onSubmitted: onCommandEntered,
-                    style: GoogleFonts.firaMono(),
                   ),
-                ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4.0),
+                      child: TextField(
+                        textInputAction: TextInputAction.none,
+                        controller: textController,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          filled: true,
+                          prefix: Text('\$  '),
+                        ),
+                        focusNode: focusNode,
+                        autofocus: true,
+                        onSubmitted: onCommandEntered,
+                        style: GoogleFonts.firaMono(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -399,7 +408,7 @@ class _SuggestionsOverlayState extends State<_SuggestionsOverlay> {
                           child: SizedBox(
                             width: double.infinity,
                             child: InkWell(
-                              onTap: () => widget.onSuggestionClick,
+                              onTap: () => widget.onSuggestionClick(widget.controller.suggestions[i]),
                               borderRadius: BorderRadius.circular(4.0),
                               child: Padding(
                                 padding: const EdgeInsets.all(8.0),
