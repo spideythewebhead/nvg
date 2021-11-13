@@ -33,13 +33,13 @@ class FileManagerApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       darkTheme: ThemeData(
         colorScheme: ColorScheme.dark(
-          primary: Colors.green,
-          secondary: Colors.blue.shade600,
+          primary: Colors.green.shade500,
+          secondary: Colors.deepPurpleAccent,
           primaryVariant: Colors.green.shade700,
-          secondaryVariant: Colors.blue.shade800,
+          secondaryVariant: Colors.deepPurpleAccent.shade700,
         ),
         checkboxTheme: CheckboxThemeData(
-          fillColor: MaterialStateProperty.all(Colors.blue.shade600),
+          fillColor: MaterialStateProperty.all(Colors.deepPurpleAccent),
         ),
         textTheme: const TextTheme(
           bodyText1: TextStyle(
@@ -49,7 +49,7 @@ class FileManagerApp extends StatelessWidget {
           bodyText2: TextStyle(
             fontSize: 14.0,
           ),
-          caption: TextStyle(fontSize: 14.0),
+          caption: TextStyle(fontSize: 12.0),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -64,7 +64,7 @@ class FileManagerApp extends StatelessWidget {
             shape: MaterialStateProperty.all(const StadiumBorder()),
             backgroundColor: MaterialStateProperty.resolveWith((states) {
               if (states.contains(MaterialState.hovered)) {
-                return Colors.blue.shade800;
+                return Colors.deepPurpleAccent;
               }
             }),
             foregroundColor: MaterialStateProperty.all(Colors.white),

@@ -29,7 +29,17 @@ class ShortcutsHelper extends StatelessWidget {
                       children: const [
                         _PrettyKey(displayName: 'ctrl'),
                         _Plus(),
-                        _PrettyKey(displayName: 'T'),
+                        _PrettyKey(displayName: 'f1'),
+                        _Colon(),
+                        Text('Toggle integrated terminal'),
+                      ],
+                    ),
+                    const SizedBox(height: 8.0),
+                    Row(
+                      children: const [
+                        _PrettyKey(displayName: 'ctrl'),
+                        _Plus(),
+                        _PrettyKey(displayName: 't'),
                         _Colon(),
                         Text('Add new tab'),
                       ],
@@ -39,7 +49,7 @@ class ShortcutsHelper extends StatelessWidget {
                       children: const [
                         _PrettyKey(displayName: 'ctrl'),
                         _Plus(),
-                        _PrettyKey(displayName: 'W'),
+                        _PrettyKey(displayName: 'w'),
                         _Colon(),
                         Text('Close selected tab'),
                       ],

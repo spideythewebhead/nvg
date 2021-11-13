@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:file_manager/env.dart';
 import 'package:file_manager/models/fav_item.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +5,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path/path.dart' as path;
 
 const _kFavItemsBox = 'fav_items';
+const _kTerminalSuggestions = 'terminal_suggestions';
 
 class DbManager {
   static DbManager get instance => _instance!;
@@ -37,5 +36,9 @@ class DbManager {
   ValueListenable<Box<FavItem>> get favItemsBoxListenable {
     _listenableCache[FavItem] ??= Hive.box<FavItem>(_kFavItemsBox).listenable();
     return _listenableCache[FavItem] as ValueListenable<Box<FavItem>>;
+  }
+
+  Future<Box<String>> get terminalSuggestionsBox {
+    return Hive.openBox<String>(_kTerminalSuggestions);
   }
 }

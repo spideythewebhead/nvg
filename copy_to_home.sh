@@ -1,1 +1,0 @@
-cp -r build/linux/x64/release/bundle/* $HOME/nvg

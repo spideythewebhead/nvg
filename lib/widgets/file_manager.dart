@@ -10,6 +10,7 @@ import 'package:file_manager/models/fav_item.dart';
 import 'package:file_manager/noop.dart';
 import 'package:file_manager/prefs_manager.dart';
 import 'package:file_manager/utils.dart';
+import 'package:file_manager/widgets/almost_terminal.dart';
 import 'package:file_manager/widgets/context_menu.dart';
 import 'package:file_manager/widgets/current_path_title.dart';
 import 'package:file_manager/widgets/dir_list_event.dart';
@@ -35,6 +36,10 @@ class _HistoryBackwardIntent extends Intent {
 
 class _ShowShortcutsIntent extends Intent {
   const _ShowShortcutsIntent();
+}
+
+class _ToggleTerminalIntent extends Intent {
+  const _ToggleTerminalIntent();
 }
 
 class FileManager extends StatefulWidget {
@@ -105,10 +110,23 @@ class _FileManagerState extends State<FileManager> {
       onInvoke: (intent) {
         ShortcutsHelper.show(context);
       },
+    ),
+    _ToggleTerminalIntent: CallbackAction<_ToggleTerminalIntent>(
+      onInvoke: (intent) {
+        isTerminalOpen = !isTerminalOpen;
+
+        if (!isTerminalOpen) {
+          bodyFocusNode.requestFocus();
+        }
+
+        updateState();
+      },
     )
   };
 
   List<FileSystemEntity>? entitiesSnapshot;
+
+  bool isTerminalOpen = false;
 
   @override
   void initState() {
@@ -274,7 +292,7 @@ class _FileManagerState extends State<FileManager> {
       return false;
     }
 
-    if (FocusScope.of(context).hasFocus && keyChar != null && allowedEntityRegExp.hasMatch(keyChar)) {
+    if (bodyFocusNode.hasPrimaryFocus && keyChar != null && allowedEntityRegExp.hasMatch(keyChar)) {
       searchFocusNode.requestFocus();
     } else if (event.logicalKey == LogicalKeyboardKey.escape &&
         (searchFocusNode.hasFocus || searchTextController.text.isNotEmpty)) {
@@ -349,6 +367,7 @@ class _FileManagerState extends State<FileManager> {
             SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): _HistoryBackwardIntent(),
             SingleActivator(LogicalKeyboardKey.arrowRight, alt: true): _HistoryForwardIntent(),
             SingleActivator(LogicalKeyboardKey.question, shift: true): _ShowShortcutsIntent(),
+            SingleActivator(LogicalKeyboardKey.f1, alt: true): _ToggleTerminalIntent(),
           },
           child: Actions(
             actions: shortcutActions,
@@ -424,96 +443,127 @@ class _FileManagerState extends State<FileManager> {
                                       directory: currentDirectory,
                                     );
                                   },
-                            child: Column(
+                            child: Stack(
+                              fit: StackFit.passthrough,
                               children: [
-                                Center(
-                                  child: TextFiltering(
-                                    controller: searchTextController,
-                                    focusNode: searchFocusNode,
-                                    onEnterPressed: () {
-                                      if ((entitiesSnapshot?.length ?? 0) == 1) {
-                                        final FileSystemEntity entity = entitiesSnapshot![0];
+                                Positioned.fill(
+                                  child: Column(
+                                    children: [
+                                      Center(
+                                        child: TextFiltering(
+                                          controller: searchTextController,
+                                          focusNode: searchFocusNode,
+                                          onEnterPressed: () {
+                                            if ((entitiesSnapshot?.length ?? 0) == 1) {
+                                              final FileSystemEntity entity = entitiesSnapshot![0];
 
-                                        if (entity is Directory) {
-                                          onDirClicked(entity);
-                                        } else {
-                                          onFileDoubleClicked(entity as File);
-                                        }
+                                              if (entity is Directory) {
+                                                onDirClicked(entity);
+                                              } else {
+                                                onFileDoubleClicked(entity as File);
+                                              }
 
-                                        bodyFocusNode.requestFocus();
-                                      }
-                                    },
+                                              bodyFocusNode.requestFocus();
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      Flexible(
+                                        child: StreamBuilder<DirListEvent>(
+                                          stream: dirListController,
+                                          initialData: const DirListLoadingEvent(),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.data is DirListLoadingEvent) {
+                                              entitiesSnapshot = null;
+                                              return const LinearProgressIndicator();
+                                            }
+
+                                            final data = snapshot.data;
+                                            late List<FileSystemEntity> entities;
+
+                                            if (data is DirListLoadedEvent) {
+                                              entities = data.entities;
+                                            } else if (data is DirListChangedEvent) {
+                                              entities = data.entities;
+                                            }
+
+                                            if (entities.isEmpty) {
+                                              return Center(
+                                                child: Text(
+                                                  'Empty folder',
+                                                  style: theme.textTheme.headline4,
+                                                ),
+                                              );
+                                            }
+
+                                            if (!prefsManager.showHidden) {
+                                              entities = entities.where((entity) {
+                                                if (entity.name[0] == '.') {
+                                                  return false;
+                                                }
+
+                                                return true;
+                                              }).toList(growable: false);
+                                            }
+
+                                            if (searchTextController.text.isNotEmpty) {
+                                              final regexp = RegExp(
+                                                searchTextController.text.replaceAll('.', '\\.'),
+                                                caseSensitive: false,
+                                              );
+
+                                              entities = entities.where((entity) {
+                                                return regexp.hasMatch(entity.name);
+                                              }).toList(growable: false);
+                                            }
+
+                                            entitiesSnapshot = entities;
+
+                                            if (prefsManager.fseViewType == FseViewType.grid) {
+                                              return FseGridView(
+                                                entities: entities,
+                                                onDirDoubleClick: onDirClicked,
+                                                onFileDoubleClick: onFileDoubleClicked,
+                                                onClick: onFSEClick,
+                                                isSelected: isFseSelected,
+                                              );
+                                            }
+
+                                            return FseListView(
+                                              entities: entities,
+                                              onDirDoubleClick: onDirClicked,
+                                              onFileDoubleClick: onFileDoubleClicked,
+                                              onClick: onFSEClick,
+                                              isSelected: isFseSelected,
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Flexible(
-                                  child: StreamBuilder<DirListEvent>(
-                                    stream: dirListController,
-                                    initialData: const DirListLoadingEvent(),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.data is DirListLoadingEvent) {
-                                        entitiesSnapshot = null;
-                                        return const LinearProgressIndicator();
-                                      }
-
-                                      final data = snapshot.data;
-                                      late List<FileSystemEntity> entities;
-
-                                      if (data is DirListLoadedEvent) {
-                                        entities = data.entities;
-                                      } else if (data is DirListChangedEvent) {
-                                        entities = data.entities;
-                                      }
-
-                                      if (entities.isEmpty) {
-                                        return Center(
-                                          child: Text(
-                                            'Empty folder',
-                                            style: theme.textTheme.headline4,
+                                Align(
+                                  alignment: Alignment.bottomCenter,
+                                  child: Column(
+                                    children: [
+                                      if (isTerminalOpen)
+                                        DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(2.0),
+                                            color: theme.colorScheme.secondary,
                                           ),
-                                        );
-                                      }
-
-                                      if (!prefsManager.showHidden) {
-                                        entities = entities.where((entity) {
-                                          if (entity.name[0] == '.') {
-                                            return false;
-                                          }
-
-                                          return true;
-                                        }).toList(growable: false);
-                                      }
-
-                                      if (searchTextController.text.isNotEmpty) {
-                                        final regexp = RegExp(
-                                          searchTextController.text.replaceAll('.', '\\.'),
-                                          caseSensitive: false,
-                                        );
-
-                                        entities = entities.where((entity) {
-                                          return regexp.hasMatch(entity.name);
-                                        }).toList(growable: false);
-                                      }
-
-                                      entitiesSnapshot = entities;
-
-                                      if (prefsManager.fseViewType == FseViewType.grid) {
-                                        return FseGridView(
-                                          entities: entities,
-                                          onDirDoubleClick: onDirClicked,
-                                          onFileDoubleClick: onFileDoubleClicked,
-                                          onClick: onFSEClick,
-                                          isSelected: isFseSelected,
-                                        );
-                                      }
-
-                                      return FseListView(
-                                        entities: entities,
-                                        onDirDoubleClick: onDirClicked,
-                                        onFileDoubleClick: onFileDoubleClicked,
-                                        onClick: onFSEClick,
-                                        isSelected: isFseSelected,
-                                      );
-                                    },
+                                          child: const SizedBox(
+                                            height: 4.0,
+                                            width: 48.0,
+                                          ),
+                                        ),
+                                      Flexible(
+                                        child: AlmostTerminal(
+                                          directory: currentDirectory,
+                                          open: isTerminalOpen,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
