@@ -71,11 +71,11 @@ class _AlmostTerminalState extends State<AlmostTerminal> {
   void didUpdateWidget(covariant AlmostTerminal oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (!widget.open) {
-      focusNode.unfocus();
-    } else {
-      focusNode.requestFocus();
-    }
+    // if (!widget.open) {
+    //   focusNode.unfocus();
+    // } else {
+    //   focusNode.requestFocus();
+    // }
   }
 
   @override
@@ -191,93 +191,86 @@ class _AlmostTerminalState extends State<AlmostTerminal> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Visibility(
-      visible: widget.open,
-      maintainState: true,
-      maintainInteractivity: false,
-      maintainAnimation: true,
-      maintainSize: true,
-      child: DefaultTextStyle(
-        style: GoogleFonts.jetBrainsMono(),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Material(
-            borderRadius: BorderRadius.circular(8.0),
-            color: theme.colorScheme.background,
-            elevation: 8.0,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Flexible(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(6.0),
-                    itemCount: commands.length,
-                    controller: scrollController,
-                    itemBuilder: (context, index) {
-                      final cmd = commands[index];
+    return DefaultTextStyle(
+      style: GoogleFonts.jetBrainsMono(),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0) - const EdgeInsets.only(top: 8.0),
+        child: Material(
+          borderRadius: BorderRadius.circular(8.0),
+          color: theme.colorScheme.background,
+          elevation: 8.0,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Flexible(
+                child: ListView.builder(
+                  padding: const EdgeInsets.all(6.0),
+                  itemCount: commands.length,
+                  controller: scrollController,
+                  itemBuilder: (context, index) {
+                    final cmd = commands[index];
 
-                      return Align(
-                        alignment: Alignment.centerLeft,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Row(
-                              children: [
-                                const Text('\$ '),
-                                Text(cmd.command),
-                                const SizedBox(width: 8.0),
-                                Text(
-                                  cmdDateFormat.format(cmd.executedAt),
-                                  style: Theme.of(context).textTheme.caption,
-                                )
-                              ],
-                            ),
-                            if (cmd.output.isNotEmpty)
-                              Card(
-                                elevation: 4.0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6.0),
-                                ),
-                                margin: const EdgeInsets.symmetric(
-                                  vertical: 6.0,
-                                  horizontal: 12.0,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    cmd.output,
-                                    style: GoogleFonts.firaMono(),
-                                  ),
-                                ),
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Text('\$ '),
+                              Text(cmd.command),
+                              const SizedBox(width: 8.0),
+                              Text(
+                                cmdDateFormat.format(cmd.executedAt),
+                                style: Theme.of(context).textTheme.caption,
                               )
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4.0),
-                    child: TextField(
-                      textInputAction: TextInputAction.none,
-                      controller: textController,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        filled: true,
-                        prefix: Text('\$  '),
+                            ],
+                          ),
+                          if (cmd.output.isNotEmpty)
+                            Card(
+                              elevation: 4.0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(6.0),
+                              ),
+                              margin: const EdgeInsets.symmetric(
+                                vertical: 6.0,
+                                horizontal: 12.0,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(
+                                  cmd.output,
+                                  style: GoogleFonts.firaMono(),
+                                ),
+                              ),
+                            )
+                        ],
                       ),
-                      focusNode: focusNode,
-                      autofocus: true,
-                      onSubmitted: onCommandEntered,
-                      style: GoogleFonts.firaMono(),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4.0),
+                  child: TextField(
+                    textInputAction: TextInputAction.none,
+                    controller: textController,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      filled: true,
+                      prefix: Text('\$  '),
                     ),
+                    focusNode: focusNode,
+                    autofocus: true,
+                    onSubmitted: onCommandEntered,
+                    style: GoogleFonts.firaMono(),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

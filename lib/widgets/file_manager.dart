@@ -18,6 +18,7 @@ import 'package:file_manager/widgets/folder_global_context_menu.dart';
 import 'package:file_manager/widgets/fse_grid_view.dart';
 import 'package:file_manager/widgets/fse_list_view.dart';
 import 'package:file_manager/widgets/icon_button.dart';
+import 'package:file_manager/widgets/self_resizable_widget.dart';
 import 'package:file_manager/widgets/shortcuts_helper.dart';
 import 'package:file_manager/widgets/side_nav.dart';
 import 'package:file_manager/widgets/text_filtering.dart';
@@ -544,26 +545,12 @@ class _FileManagerState extends State<FileManager> {
                                 ),
                                 Align(
                                   alignment: Alignment.bottomCenter,
-                                  child: Column(
-                                    children: [
-                                      if (isTerminalOpen)
-                                        DecoratedBox(
-                                          decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(2.0),
-                                            color: theme.colorScheme.secondary,
-                                          ),
-                                          child: const SizedBox(
-                                            height: 4.0,
-                                            width: 48.0,
-                                          ),
-                                        ),
-                                      Flexible(
-                                        child: AlmostTerminal(
-                                          directory: currentDirectory,
-                                          open: isTerminalOpen,
-                                        ),
-                                      ),
-                                    ],
+                                  child: SelfResizableWidget(
+                                    visible: isTerminalOpen,
+                                    child: AlmostTerminal(
+                                      directory: currentDirectory,
+                                      open: isTerminalOpen,
+                                    ),
                                   ),
                                 ),
                               ],
