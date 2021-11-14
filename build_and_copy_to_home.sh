@@ -18,3 +18,4 @@ sleep 2
 
 mkdir -p $HOME/nvg
 cp -r build/linux/x64/release/bundle/* $HOME/nvg
+cp -r linux_install/* $HOME/nvg

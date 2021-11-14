@@ -297,7 +297,7 @@ packages:
   streams:
     dependency: "direct main"
     description:
-      path: "../streams"
+      path: "packages/streams"
       relative: true
     source: path
     version: "0.0.1"

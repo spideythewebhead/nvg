@@ -1,0 +1,17 @@
+[Desktop Entry]
+Name=NVG
+Type=Application
+Terminal=false
+Categories=FileManager;
+Icon=CWD/icon.png
+Exec=CWD/file_manager %U
+Actions=open-downloads;open-music;
+StartupNotify=true
+
+[Desktop Action open-downloads]
+Name=Downloads
+Exec=CWD/file_manager "HOME/Downloads"
+
+[Desktop Action open-music]
+Name=Music
+Exec=CWD/file_manager "HOME/Music"
